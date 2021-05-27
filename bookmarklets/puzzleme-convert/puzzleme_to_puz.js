@@ -1,5 +1,5 @@
 /**
- * PuzzleMe to PUZ version 0.1
+ * PuzzleMe to PUZ version 0.2
 **/
 
 /**
@@ -36,28 +36,7 @@ const PUZ_HEADER_CONSTANTS = {
     },
 };
 
-
 const PUZ_STRING_FIELDS = ['title', 'author', 'copyright'];
-
-function readHeader(buf) {
-    const i = PUZ_HEADER_CONSTANTS.offsets;
-    const n = PUZ_HEADER_CONSTANTS.lengths;
-    return {
-        FILE_CHECKSUM: buf.readUInt16LE(i.FILE_CHECKSUM),
-        MAGIC: buf.toString('utf8', i.MAGIC, i.MAGIC + n.MAGIC),
-        HEADER_CHECKSUM: buf.readUInt16LE(i.HEADER_CHECKSUM),
-        ICHEATED_CHECKSUM: buf.toString('hex', i.ICHEATED_CHECKSUM, i.ICHEATED_CHECKSUM + n.ICHEATED_CHECKSUM),
-        VERSION: buf.toString('utf8', i.VERSION, i.VERSION + n.VERSION),
-        RES1: buf.readUInt16LE(i.RES1),
-        SCRAMBLED_CHECKSUM: buf.readUInt16LE(i.SCRAMBLED_CHECKSUM),
-        RES2: buf.toString('hex', i.RES2, i.RES2 + n.RES2),
-        WIDTH: buf.readUInt8(i.WIDTH),
-        HEIGHT: buf.readUInt8(i.HEIGHT),
-        NUM_CLUES: buf.readUInt16LE(i.NUM_CLUES),
-        UNKNOWN_BITMASK: buf.readUInt16LE(i.UNKNOWN_BITMASK),
-        SCRAMBLED_TAG: buf.readUInt16LE(i.SCRAMBLED_TAG)
-    }
-}
 
 function windows1252_encode(s) {
     var ret = new Uint8Array(s.length);
@@ -72,56 +51,6 @@ function puzEncode(s, encoding) {
         encoding = PUZ_ENCODING;
     }
     return windows1252_encode(s);
-}
-
-/**
- * Replace Word characters with Ascii equivalent
- **/
-function replaceWordChars(text) {
-    var s = text;
-
-    s = s.replace(/[\u2018|\u2019|\u201A]/g, "\'");
-
-    s = s.replace(/[\u201C|\u201D|\u201E]/g, "\"");
-
-    s = s.replace(/\u2026/g, "...");
-
-    s = s.replace(/[\u2013|\u2014]/g, "-");
-
-    s = s.replace(/\u02C6/g, "^");
-
-    s = s.replace(/\u2039/g, "");
-
-    s = s.replace(/[\u02DC|\u00A0]/g, " ");
-    return s;
-}
-
-
-function puzDecode(buf, start, end, encoding) {
-    if (!encoding) {
-        encoding = PUZ_ENCODING;
-    }
-
-    const decoder = new TextDecoder();
-    const s = decoder.decode(buf.slice(start, end));
-
-    return replaceWordChars(s);
-}
-
-function splitNulls(buf, encoding) {
-    let i = 0;
-    let prev = 0;
-    let parts = [];
-    while (i < buf.length) {
-        if (buf[i] === 0x0) {
-            parts.push(puzDecode(buf, prev, i, encoding));
-            prev = i + 1;
-        }
-        i++;
-    }
-    if (i > prev)
-        parts.push(puzDecode(buf, prev, i, encoding));
-    return parts;
 }
 
 function checksum(base, c, len) {
@@ -167,27 +96,6 @@ function writeUInt16LE(buf, offset, val) {
 }
 
 class PuzPayload {
-    static from(x, encoding) {
-        const buf = Buffer.from(x);
-        let header = readHeader(buf);
-        const ncells = header.WIDTH * header.HEIGHT;
-        let pos = PUZ_HEADER_CONSTANTS.lengths.HEADER;
-        const solution = puzDecode(buf, pos, pos + ncells, encoding);
-        pos += ncells;
-        const state = puzDecode(buf, pos, pos + ncells, encoding);
-        pos += ncells;
-        const strings = splitNulls(buf.slice(pos), encoding);
-        const fields = PUZ_STRING_FIELDS;
-        const meta = {};
-        fields.forEach(function(f, i) {
-            meta[f] = strings[i];
-        });
-        meta.note = strings[fields.length + header.NUM_CLUES];
-        meta.width = header.WIDTH;
-        meta.height = header.HEIGHT;
-        const clues = strings.slice(fields.length, fields.length + header.NUM_CLUES);
-        return new PuzPayload(meta, clues, solution, state);
-    }
 
     buildStrings() {
         let strings = '';
@@ -250,16 +158,11 @@ class PuzPayload {
         header.set(encoder.encode("ACROSS&DOWN"), i.MAGIC);
         header.set(encoder.encode("1.3"), i.VERSION);
 
-
-
-
         header[i.WIDTH] = this.width;
         header[i.HEIGHT] = this.height;
         writeUInt16LE(header, i.NUM_CLUES, this.clues.length);
 
-
         header[i.UNKNOWN_BITMASK] = 0x01;
-
 
         const c = this.computeChecksums(header);
         writeUInt16LE(header, i.FILE_CHECKSUM, c.file);
@@ -293,51 +196,7 @@ class PuzPayload {
 
 /******************/
 
-var puzdata = JSON.parse(atob(window.rawc));
-var meta = {
-    title: puzdata.title,
-    author: puzdata.author,
-    copyright: puzdata.copyright,
-    note: puzdata.description,
-    width: puzdata.w,
-    height: puzdata.h,
-};
-
-var soln = '';
-var grid = '';
-for (var j=0; j < puzdata.h; j++) {
-  for (var i=0; i < puzdata.w; i++) {
-    var let = puzdata.box[i][j];
-    if (let == '\u0000') {
-      soln += '.';
-      grid += '.';
-    }
-    else {
-      soln += let;
-      grid += '-';
-    }
-  }
-}
-
-var all_entries = puzdata.placedWords;
-
-
-all_entries.sort(function(x, y) {
-   if (x.clueNum < y.clueNum) {
-       return -1;
-   } else if (x.clueNum > y.clueNum) {
-       return 1;
-   }
-   else {
-       if (x.acrossNotDown > y.acrossNotDown) {
-           return -1;
-       } else if (x.acrossNotDown < y.acrossNotDown) {
-           return 1;
-       }
-   }
-   return 0;
-});
-
+/* Function to convert utf-8 to iso-8859-1 */
 function utf8_decode ( str_data ) {
     var tmp_arr = [], i = ac = c1 = c2 = c3 = 0;
 
@@ -363,6 +222,53 @@ function utf8_decode ( str_data ) {
     return tmp_arr.join('');
 }
 
+/* Grab the data from amuselabs */
+var puzdata = JSON.parse(atob(window.rawc));
+var meta = {
+    title: utf8_decode(puzdata.title),
+    author: utf8_decode(puzdata.author),
+    copyright: utf8_decode(puzdata.copyright),
+    note: puzdata.description,
+    width: puzdata.w,
+    height: puzdata.h,
+};
+
+/* Solution and grid */
+var soln = '';
+var grid = '';
+for (var j=0; j < puzdata.h; j++) {
+  for (var i=0; i < puzdata.w; i++) {
+    var letter = puzdata.box[i][j];
+    if (letter == '\u0000') {
+      soln += '.';
+      grid += '.';
+    }
+    else {
+      soln += letter;
+      grid += '-';
+    }
+  }
+}
+
+/* Grab and sort the clues */
+var all_entries = puzdata.placedWords;
+all_entries.sort(function(x, y) {
+   if (x.clueNum < y.clueNum) {
+       return -1;
+   } else if (x.clueNum > y.clueNum) {
+       return 1;
+   }
+   else {
+       if (x.acrossNotDown > y.acrossNotDown) {
+           return -1;
+       } else if (x.acrossNotDown < y.acrossNotDown) {
+           return 1;
+       }
+   }
+   return 0;
+});
+
+/* Function to fix some characters we couldn't do before */
 function puzzleme_character_replace(s) {
   s = s.replaceAll('â\u0080\u009c', '"');
   s = s.replaceAll('â\u0080\u009d', '"');
@@ -372,6 +278,7 @@ function puzzleme_character_replace(s) {
   return s;
 }
 
+/* Fix the clues */
 var clues = [];
 for (var i=0; i<all_entries.length; i++) {
   var clue = all_entries[i]['clue']['clue'];
@@ -379,15 +286,11 @@ for (var i=0; i<all_entries.length; i++) {
   clues.push(clue);
 }
 
+/* Create the object */
 var puz_payload = new PuzPayload(meta, clues, soln, grid);
 
-var outname = puzdata.srcFileName;
-if (!outname) {
-    outname = 'download.puz';
-}
-if (!outname.endsWith('.puz')) {
-    outname = outname + '.puz';
-}
+/* We base the filename on the puzzle title */
+var outname = puzdata.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.puz';
 
 /** Generic file download function **/
 function file_download(data, filename, type) {
@@ -409,7 +312,6 @@ function file_download(data, filename, type) {
 }
 
 /** Download puzdata as a .puz file **/
-
 function puz_download(puz_payload, outname) {
     file_download(puz_payload.toBytes(), outname, 'application/octet-stream');
 }
