@@ -1,5 +1,13 @@
 /**
- * PuzzleMe to PUZ version 0.2
+ * PuzzleMe to PUZ version 0.2.1
+
+ * Changelog:
+   * 0.2.1:
+     * Quick fix for rebus puzzles
+   * 0.2:
+     * Remove unnecessary code
+     * Fix character encoding in meta-fields
+     * Create filename from title
 **/
 
 /**
@@ -244,7 +252,7 @@ for (var j=0; j < puzdata.h; j++) {
       grid += '.';
     }
     else {
-      soln += letter;
+      soln += letter.charAt(0); /* temporary fix for rebus puzzles */
       grid += '-';
     }
   }
