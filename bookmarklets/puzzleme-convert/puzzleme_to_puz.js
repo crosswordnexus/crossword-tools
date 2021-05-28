@@ -1,7 +1,9 @@
 /**
- * PuzzleMe to PUZ version 0.2.1
+ * PuzzleMe to PUZ version 0.2.2
 
  * Changelog:
+   * 0.2.2:
+     * Remove HTML tags from clues
    * 0.2.1:
      * Quick fix for rebus puzzles
    * 0.2:
@@ -286,11 +288,20 @@ function puzzleme_character_replace(s) {
   return s;
 }
 
+/* function to strip HTML tags */
+/* via https://stackoverflow.com/a/5002618 */
+function strip_html(s) {
+    var div = document.createElement("div");
+    div.innerHTML = s;
+    var text = div.textContent || div.innerText || "";
+    return text;
+}
+
 /* Fix the clues */
 var clues = [];
 for (var i=0; i<all_entries.length; i++) {
   var clue = all_entries[i]['clue']['clue'];
-  clue = utf8_decode(puzzleme_character_replace(clue));
+  clue = utf8_decode(strip_html(puzzleme_character_replace(clue)));
   clues.push(clue);
 }
 
