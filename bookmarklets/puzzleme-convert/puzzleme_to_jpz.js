@@ -1,5 +1,10 @@
 /**
- * PuzzleMe to JPZ version 0.1.0
+ * PuzzleMe to JPZ version 0.1.1
+
+ * Changelog:
+   * 0.1.1:
+     * default to srcFileName for the title
+     * Fix a bug if cellInfos does not exist
 **/
 
 function xml_sanitize(s) {
@@ -132,7 +137,7 @@ function b64DecodeUnicode(str) {
 function amuse_data_to_js_crossword() {
     var puzdata = JSON.parse(b64DecodeUnicode(window.rawc));
     var metadata = {
-        title: puzdata.title,
+        title: puzdata.title || puzdata.srcFileName,
         author: puzdata.author,
         copyright: puzdata.copyright,
         description: puzdata.description,
@@ -160,9 +165,10 @@ function amuse_data_to_js_crossword() {
             cell["number"] = number;
         }
         /* if there's a cellInfo with information about this cell, add that info */
-        var ix = puzdata.cellInfos.findIndex(e => (e.x === i && e.y === j))
+        var cellInfos = puzdata.cellInfos || [];
+        var ix = cellInfos.findIndex(e => (e.x === i && e.y === j))
         if (ix !== -1) {
-            var cellInfoObj = puzdata.cellInfos[ix];
+            var cellInfoObj = cellInfos[ix];
             if (cellInfoObj.bgColor) {
                 cell['background-color'] = cellInfoObj.bgColor;
             }
