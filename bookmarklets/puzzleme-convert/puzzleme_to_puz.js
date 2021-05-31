@@ -1,7 +1,10 @@
 /**
- * PuzzleMe to PUZ version 0.2.2
+ * PuzzleMe to PUZ version 0.2.3
 
  * Changelog:
+   * 0.2.3:
+     * default to srcFileName for the filename if the title is blank
+     * Create default values for title / author / copyright
    * 0.2.2:
      * Remove HTML tags from clues
    * 0.2.1:
@@ -235,9 +238,9 @@ function utf8_decode ( str_data ) {
 /* Grab the data from amuselabs */
 var puzdata = JSON.parse(atob(window.rawc));
 var meta = {
-    title: utf8_decode(puzdata.title),
-    author: utf8_decode(puzdata.author),
-    copyright: utf8_decode(puzdata.copyright),
+    title: utf8_decode(puzdata.title) || 'Untitled',
+    author: utf8_decode(puzdata.author) || 'No author given',
+    copyright: utf8_decode(puzdata.copyright) || '(c)',
     note: puzdata.description,
     width: puzdata.w,
     height: puzdata.h,
@@ -310,6 +313,11 @@ var puz_payload = new PuzPayload(meta, clues, soln, grid);
 
 /* We base the filename on the puzzle title */
 var outname = puzdata.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.puz';
+// if there's no title, base it on the srcFileName
+if (!puzdata.title) {
+    outname = puzdata.srcFileName;
+    outname = outname.split('.')[0] + '.puz';
+}
 
 /** Generic file download function **/
 function file_download(data, filename, type) {
