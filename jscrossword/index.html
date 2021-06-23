@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <script src="puz_read_write.js"></script>
+    <script src="jpz_read_write.js"></script>
+    <script src="jscrossword.js"></script>
+    <script src="jspdf.min.js"></script>
+    <script src="xw_pdf.js"></script>
+</head>
+
+<body>
+
+<input type="file" id="files" name="files" accept=".puz,.xml,.jpz,.xpz" />
+
+<script type="text/javascript">
+
+
+var MY_GLOBAL;
+
+/** Handling form submission **/
+function handleFileSelect(evt) {
+    const files = evt.target.files; // FileList object
+
+    // files is a FileList of File objects.
+    for (let i = 0, f; f = files[i]; i++) {
+        // Only process small files.
+        if (f.size >= 7500) {
+            alert('This file is too big.');
+            continue;
+        }
+        if (f) {
+            const r = new FileReader();
+            r.onload = (function (theFile) {
+                return function (e) {
+                    let contents = e.target.result;
+                    var xw_constructor = new JSCrossword();
+                    var xw = xw_constructor.fromPuz(contents);
+                    jscrossword_to_pdf(xw);
+                    //var jpz_str = xw.toJPZString();
+                    //file_download(jpz_str, 'test.jpz', 'text/xml');
+                    MY_GLOBAL = xw;
+                };
+            })(f);
+            r.readAsBinaryString(f);
+        } else {
+            alert("Failed to load file");
+        }
+    }
+}
+document.getElementById('files').addEventListener('change', handleFileSelect, false);
+</script>
+
+</body>
+</HTML>
