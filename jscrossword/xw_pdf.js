@@ -323,15 +323,6 @@ function jscrossword_to_pdf(xw, options={}) {
         return agg;
     }
 
-    function has_bi(agg) {
-        agg.forEach(row => {
-            if (row.is_bold || row.is_italic) {
-                return true;
-            }
-        });
-        return false;
-    }
-
     // helper function for bold and italic clues
     function split_text_to_size_bi(clue, col_width, doc) {
         // get the clue with HTML stripped out
@@ -384,7 +375,6 @@ function jscrossword_to_pdf(xw, options={}) {
         }
 
         //console.log(textObject);
-
         if (typeof(textObject) == 'string') {
             doc.text(startX, startY, line);
         }
@@ -416,6 +406,8 @@ function jscrossword_to_pdf(xw, options={}) {
         doc = new jsPDF('portrait','pt','letter');
         var clue_padding = clue_pt / 3;
         doc.setFontSize(clue_pt);
+
+        doc.setLineWidth(options.line_width);
 
         // Print the clues
         var line_xpos = margin;
