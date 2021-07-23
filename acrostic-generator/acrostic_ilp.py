@@ -300,7 +300,7 @@ def main(argv=None):
             elif o in ('-x', '--excluded'):
                 # a comma-separated list of words not to include
                 excluded=[_.strip().lower() for _ in a.split(',')]
-            elif o in ('-x', '--included'):
+            elif o in ('-i', '--included'):
                 # a comma-separated list of words not to include
                 included=[_.strip().lower() for _ in a.split(',')]
 
