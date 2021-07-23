@@ -147,24 +147,31 @@ def create_acrostic2(quote, source, excluded_words=[], included_words=[]):
     -------
     soln_array: list
         A list of words comprising a feasible acrostic.
-        
+
     This code relies heavily on the original create_acrostic function
     """
-    
+
     def remove_string(s1, s2):
         # Remove the letters in s1 from s2
         s3 = s2.lower()
         for letter in alpha_only(s1):
             s3 = s3.replace(letter, '', 1)
         return s3
-    
-    # Take the letters from the words we're including
-    included_alpha = alpha_only(''.join(included_words))
-    # Remove them from the quote
-    quote2 = remove_string(included_alpha, quote)
-    # Remove the first letters of included words for the source
-    first_letters = ''.join(x[0] for x in included_words)
-    source2 = remove_string(first_letters, source)
+
+    # Make sure we are only including actual words
+    included_words = [x for x in included_words if x]
+
+    if included_words:
+        # Take the letters from the words we're including
+        included_alpha = alpha_only(''.join(included_words))
+        # Remove them from the quote
+        quote2 = remove_string(included_alpha, quote)
+        # Remove the first letters of included words for the source
+        first_letters = ''.join(x[0] for x in included_words)
+        source2 = remove_string(first_letters, source)
+    else:
+        source2 = alpha_only(source)
+        quote2 = quote
     # Create the acrostic
     soln_array1 = create_acrostic(quote2, source2, excluded_words=excluded_words)
     # Add in the missing words to this solution
