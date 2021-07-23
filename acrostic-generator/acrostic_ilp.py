@@ -130,9 +130,59 @@ def create_kotwords_export(quote, source, solution_array):
 
     return ret
 
+def create_acrostic2(quote, source, excluded_words=[], included_words=[]):
+    """
+    Parameters
+    ----------
+    quote : string
+        The quote we want to make an acrostic puzzle from.
+    source : string
+        The source of the quote (usually the author + work).
+    excluded_words : list (optional)
+        Words not to include in a solution.
+    included_words: list (optional)
+        Words to include in a solution.
+
+    Returns
+    -------
+    soln_array: list
+        A list of words comprising a feasible acrostic.
+        
+    This code relies heavily on the original create_acrostic function
+    """
+    
+    def remove_string(s1, s2):
+        # Remove the letters in s1 from s2
+        s3 = s2.lower()
+        for letter in alpha_only(s1):
+            s3 = s3.replace(letter, '', 1)
+        return s3
+    
+    # Take the letters from the words we're including
+    included_alpha = alpha_only(''.join(included_words))
+    # Remove them from the quote
+    quote2 = remove_string(included_alpha, quote)
+    # Remove the first letters of included words for the source
+    first_letters = ''.join(x[0] for x in included_words)
+    source2 = remove_string(first_letters, source)
+    # Create the acrostic
+    soln_array1 = create_acrostic(quote2, source2, excluded_words=excluded_words)
+    # Add in the missing words to this solution
+    solution_words = soln_array1 + included_words
+    soln_array = []
+    for letter in alpha_only(source):
+        good_words = [x for x in solution_words if x[0] == letter]
+        if good_words:
+            new_word = good_words[0]
+            soln_array.append(new_word)
+            solution_words.remove(new_word)
+        else:
+            return []
+    return soln_array
+#END create_acrostic2()
+
 def create_acrostic(quote, source, excluded_words=[]):
     """
-
     Parameters
     ----------
     quote : string
@@ -214,10 +264,14 @@ def create_acrostic(quote, source, excluded_words=[]):
         elif v.x > 0.99:
             solution_words[v.name[0]] = solution_words.get(v.name[0], []) + [v.name]
 
-    solution_array = []
-    for letter in source_alpha:
-        x = solution_words[letter].pop()
-        solution_array.append(x)
+    try:
+        solution_array = []
+        for letter in source_alpha:
+            x = solution_words[letter].pop()
+            solution_array.append(x)
+    except Exception as e:
+        logging.error(quote, source)
+        raise e
 
     return solution_array
 #END create_acrostic()
@@ -229,10 +283,11 @@ def main(argv=None):
     quote = ''
     source = ''
     excluded = []
+    included = []
 
     try:
         try:
-            opts, args = getopt.getopt(argv[1:], "q:s:x:", ["quote=", "source=", "excluded="])
+            opts, args = getopt.getopt(argv[1:], "q:s:x:i:", ["quote=", "source=", "excluded=", "included="])
         except getopt.error as msg:
              raise msg
         for o,a in opts:
@@ -245,9 +300,12 @@ def main(argv=None):
             elif o in ('-x', '--excluded'):
                 # a comma-separated list of words not to include
                 excluded=[_.strip().lower() for _ in a.split(',')]
+            elif o in ('-x', '--included'):
+                # a comma-separated list of words not to include
+                included=[_.strip().lower() for _ in a.split(',')]
 
         # Execute the code
-        soln_array = create_acrostic(quote, source, excluded_words=excluded)
+        soln_array = create_acrostic2(quote, source, excluded_words=excluded, included_words=included)
         for x in soln_array:
             print(x.upper())
 
