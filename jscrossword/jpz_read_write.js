@@ -14,15 +14,26 @@ function escapeHtml(unsafe) {
          .replace(/'/g, "&#039;");
  }
 
-function xw_read_jpz(data) {
+function xw_read_jpz(data1) {
     var ERR_PARSE_JPZ = 'Error parsing JPZ file.';
     // check if it's zipped
-    if (data.match(/^<\?xml/)) {
-        // do nothing
+    if (data1.match(/^<\?xml/)) {
+        var data = data1;
     }
     else {
-        // not yet supported
-        alert("can't yet handle zipped xml");
+        // I wish I could do this synchronously
+        /*
+        JSZip.loadAsync(data1).then(function (zip) {
+            var filename = Object.keys(zip.files)[0];
+            return zip.file(filename).async("string");
+        }).then(function (text) {
+            window.tmpData = text;
+            console.log(text);
+        });
+        */
+        var uint8array = pako.inflate(data1);
+        //var data = new TextDecoder().decode(uint8array);
+        console.log(uint8array);
     }
     // create a DOMParser object
     var xml_string = data.replace('&nbsp;', ' ');
@@ -44,9 +55,10 @@ function xw_read_jpz(data) {
     }
 
     // determine the type of the crossword
+    var CROSSWORD_TYPES = ['crossword', 'coded', 'acrostic'];
     var crossword_type;
-    for (var _i = 0; _i < this.CROSSWORD_TYPES.length; _i++) {
-        crossword_type = this.CROSSWORD_TYPES[_i];
+    for (var _i = 0; _i < CROSSWORD_TYPES.length; _i++) {
+        crossword_type = CROSSWORD_TYPES[_i];
         crossword = xmlDoc.getElementsByTagName(crossword_type);
         if (crossword.length > 0) {
             break;
@@ -116,8 +128,8 @@ function xw_read_jpz(data) {
 
     for (i=0; (cell = xml_cells[i]); i++) {
         var new_cell = {
-            x: Number(cell.getAttribute('x')),
-            y: Number(cell.getAttribute('y')),
+            x: Number(cell.getAttribute('x')) - 1,
+            y: Number(cell.getAttribute('y')) - 1,
             solution: cell.getAttribute('solution'),
             number: cell.getAttribute('number'),
             "background-color": cell.getAttribute('background-color'),
@@ -146,10 +158,61 @@ function xw_read_jpz(data) {
         }
         cells.push(new_cell);
     }
+    // WORDS
+    var words = [];
+    for (i = 0; (word = xml_words[i]); i++) {
+        var id = word.getAttribute('id');
+        var x = word.getAttribute('x');
+        var y = word.getAttribute('y');
+        var split_x = x.split('-');
+        var split_y = y.split('-');
+        var word_cells = [];
+        if (split_x.length > 1) {
+            var x_from = Number(split_x[0]); var x_to = Number(split_x[1]);
+            var y1 = Number(split_y[0]);
+            for (var k=x_from;
+                (x_from < x_to ? k <= x_to : k >= x_to);
+                (x_from < x_to ? k++ : k--)) {
+                word_cells.push([k-1, y1-1]);
+            }
+        } else if (split_y.length > 1) {
+            var y_from = Number(split_y[0]); var y_to = Number(split_y[1]);
+            var x1 = Number(split_x[0]);
+            for (var k=y_from;
+                (y_from < y_to ? k <= y_to : k >= y_to);
+                (y_from < y_to ? k++ : k--)) {
+                word_cells.push([x1-1, k-1]);
+            }
+        } else {
+            word_cells.push([split_x[0], split_y[0]]);
+        }
+        words.push({'id': id, 'cells': word_cells});
+    }
 
+    // CLUES
+    var clues = [];
+    if (crossword_type == 'coded') {
+        // pass: no clues
+    } else {
+        for (i = 0; (clues_block = xml_clues[i]); i++) {
+            var title_el = clues_block.getElementsByTagName('title')[0];
+            //console.log(title_el);
+            var clues_el = clues_block.getElementsByTagName('clue');
+            var title = title_el.innerHTML.trim();
+            var this_clue = [];
+            var k, clue;
+            for (k=0; clue = clues_el[k]; k++) {
+                var word_id = clue.getAttribute('word');
+                var clue_number = clue.getAttribute('number');
+                var text = clue.innerHTML.trim();
+                this_clue.push({'text': text, 'word': word_id, 'number': clue_number});
+            }
+            clues.push({'title': title, 'clue': this_clue});
+        }
+    }
 
+    return new JSCrossword(metadata, cells, words, clues);
 }
-
 
 function xw_write_jpz(metadata, cells, words, clues) {
     var i, j;
