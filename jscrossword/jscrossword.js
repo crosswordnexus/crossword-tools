@@ -1,3 +1,90 @@
+/**
+* Class for a crossword grid
+**/
+class xwGrid {
+    constructor(soln_arr, block='.') {
+        this.solution = soln_arr;
+        // width and height
+        this.height = soln_arr.length;
+        this.width = soln_arr[0].length;
+        // Grid numbering
+        this.numbers = this.gridNumbering();
+        this.block = block;
+    }
+    isBlack(x, y) {
+        return this.solution[y][x] === this.block;
+    }
+    startAcrossWord(x, y) {
+        return (x === 0 || this.isBlack(x - 1, y)) && x < this.width - 1 && !this.isBlack(x, y) && !this.isBlack(x + 1, y);
+    }
+    startDownWord(x, y) {
+        return (y === 0 || this.isBlack(x, y - 1)) && y < this.height - 1 && !this.isBlack(x, y) && !this.isBlack(x, y + 1);
+    }
+    letterAt(x, y) {
+        return this.solution[y][x];
+    }
+    gridNumbering() {
+        var numbers = [];
+        var thisNumber = 1;
+        for (var y=0; y < this.height; y++) {
+            var thisNumbers = [];
+            for (var x=0; x < this.width; x++) {
+                if (this.startAcrossWord(x, y) || this.startDownWord(x, y)) {
+                    thisNumbers.push(thisNumber);
+                    thisNumber += 1;
+                }
+                else {
+                    thisNumbers.push(0);
+                }
+            }
+            numbers.push(thisNumbers);
+        }
+        return numbers;
+    }
+
+    acrossEntries() {
+        var acrossEntries = {}, x, y, thisNum;
+        for (y = 0; y < this.height; y++) {
+            for (x = 0; x < this.width; x++) {
+                if (this.startAcrossWord(x, y)) {
+                    thisNum = this.numbers[y][x];
+                    if (!acrossEntries[thisNum]) {
+                        acrossEntries[thisNum] = {'word': '', 'cells': []};
+                    }
+                }
+                if (!this.isBlack(x, y)) {
+                    var letter = this.letterAt(x, y);
+                    acrossEntries[thisNum]['word'] += letter;
+                    acrossEntries[thisNum]['cells'].push([x, y]);
+                }
+            }
+        }
+        return acrossEntries;
+    }
+
+    downEntries() {
+        var downEntries = {}, x, y, thisNum;
+        for (x = 0; x < this.width; x++) {
+            for (y = 0; y < this.height; y++) {
+                if (this.startDownWord(x, y)) {
+                    thisNum = this.numbers[y][x];
+                    if (!downEntries[thisNum]) {
+                        downEntries[thisNum] = {'word': '', 'cells': []};
+                    }
+                }
+                if (!this.isBlack(x, y)) {
+                    var letter = this.letterAt(x, y);
+                    downEntries[thisNum]['word'] += letter;
+                    downEntries[thisNum]['cells'].push([x, y]);
+                }
+            }
+        }
+        return downEntries;
+    }
+
+}
+
+
 // function to get an index from an i, j, and width
 function xw_ij_to_index(i, j, w) {
     return j * w + i;
@@ -83,7 +170,7 @@ class JSCrossword {
         this.clues = clues;
     }
 
-    CROSSWORD_TYPES = ['crossword', 'coded', 'acrostic'];
+    //CROSSWORD_TYPES = ['crossword', 'coded', 'acrostic'];
 
     /**
     * useful functions
@@ -126,9 +213,15 @@ class JSCrossword {
     }
 
     /** JPZ **/
-    // requires jpz_read_write.js
+    // requires jpz_read_write.js (and JSZip??)
     fromJPZ(data) {
         return xw_read_jpz(data);
+    }
+
+    /** iPUZ **/
+    // requires ipuz_read_write.js
+    fromIpuz(data) {
+        return xw_read_ipuz(data);
     }
 
     /**

@@ -7,11 +7,14 @@
     <script src="jscrossword.js"></script>
     <script src="jspdf.min.js"></script>
     <script src="xw_pdf.js"></script>
+    <script src="ipuz_read_write.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js" integrity="sha512-xQBQYt9UcgblF6aCMrwU1NkVA7HCXaSN2oq0so80KO+y68M+n64FOcqgav4igHe6D5ObBLIf68DWv+gfBowczg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js" integrity="sha512-EAKzSKex+PXC0U9OG13r1059ysjrjkJEpZoONCnZa0mBROY28iBOOxZSErUVw1LzLr2+U5PhR7zPCPKidUVJqg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 
 <body>
 
-<input type="file" id="files" name="files" accept=".puz,.xml,.jpz,.xpz" />
+<input type="file" id="files" name="files" accept=".puz,.xml,.jpz,.xpz,.ipuz" />
 
 <script type="text/javascript">
 
@@ -25,18 +28,28 @@ function handleFileSelect(evt) {
     // files is a FileList of File objects.
     for (let i = 0, f; f = files[i]; i++) {
         // Only process small files.
-        if (f.size >= 7500) {
+        if (f.size >= 75000) {
             alert('This file is too big.');
             continue;
         }
         if (f) {
+            var filename = f.name.toLowerCase();
             const r = new FileReader();
             r.onload = (function (theFile) {
                 return function (e) {
                     let contents = e.target.result;
                     var xw_constructor = new JSCrossword();
-                    var xw = xw_constructor.fromPuz(contents);
-                    jscrossword_to_pdf(xw);
+                    var xw;
+                    if (filename.endsWith('.puz')) {
+                        xw = xw_constructor.fromPuz(contents);
+                    } else if (filename.endsWith('jpz') || filename.endsWith('xml')) {
+                        xw = xw_constructor.fromJPZ(contents);
+                    } else if (filename.endsWith('ipuz')) {
+                        xw = xw_constructor.fromIpuz(contents);
+                    } else {
+                        throw 'file type not supported';
+                    }
+                    //jscrossword_to_pdf(xw);
                     //var jpz_str = xw.toJPZString();
                     //file_download(jpz_str, 'test.jpz', 'text/xml');
                     MY_GLOBAL = xw;
