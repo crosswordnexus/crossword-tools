@@ -31,9 +31,7 @@ function xw_read_jpz(data1) {
             console.log(text);
         });
         */
-        var uint8array = pako.inflate(data1);
-        //var data = new TextDecoder().decode(uint8array);
-        console.log(uint8array);
+        throw "Zipped JPZ files are not currently supported.";
     }
     // create a DOMParser object
     var xml_string = data.replace('&nbsp;', ' ');
@@ -132,9 +130,9 @@ function xw_read_jpz(data1) {
             y: Number(cell.getAttribute('y')) - 1,
             solution: cell.getAttribute('solution'),
             number: cell.getAttribute('number'),
+            type: cell.getAttribute('type'),
             "background-color": cell.getAttribute('background-color'),
             "background-shape": cell.getAttribute('background-shape'),
-            empty: (cell.getAttribute('type') === 'block' || cell.getAttribute('type') === 'void' || cell.getAttribute('type') === 'clue'),
             letter: cell.getAttribute('solve-state'),
             top_right_number: cell.getAttribute('top-right-number'),
             is_void: cell.getAttribute('type') === 'void',
