@@ -4,12 +4,12 @@
 class xwGrid {
     constructor(soln_arr, block='.') {
         this.solution = soln_arr;
+        this.block = block;
         // width and height
         this.height = soln_arr.length;
         this.width = soln_arr[0].length;
         // Grid numbering
         this.numbers = this.gridNumbering();
-        this.block = block;
     }
     isBlack(x, y) {
         return this.solution[y][x] === this.block;
@@ -29,6 +29,8 @@ class xwGrid {
         for (var y=0; y < this.height; y++) {
             var thisNumbers = [];
             for (var x=0; x < this.width; x++) {
+                if (this.isBlack(x, y)) {
+                }
                 if (this.startAcrossWord(x, y) || this.startDownWord(x, y)) {
                     thisNumbers.push(thisNumber);
                     thisNumber += 1;
@@ -48,11 +50,11 @@ class xwGrid {
             for (x = 0; x < this.width; x++) {
                 if (this.startAcrossWord(x, y)) {
                     thisNum = this.numbers[y][x];
-                    if (!acrossEntries[thisNum]) {
+                    if (!acrossEntries[thisNum] && thisNum) {
                         acrossEntries[thisNum] = {'word': '', 'cells': []};
                     }
                 }
-                if (!this.isBlack(x, y)) {
+                if (!this.isBlack(x, y) && thisNum) {
                     var letter = this.letterAt(x, y);
                     acrossEntries[thisNum]['word'] += letter;
                     acrossEntries[thisNum]['cells'].push([x, y]);
@@ -68,11 +70,11 @@ class xwGrid {
             for (y = 0; y < this.height; y++) {
                 if (this.startDownWord(x, y)) {
                     thisNum = this.numbers[y][x];
-                    if (!downEntries[thisNum]) {
+                    if (!downEntries[thisNum] && thisNum) {
                         downEntries[thisNum] = {'word': '', 'cells': []};
                     }
                 }
-                if (!this.isBlack(x, y)) {
+                if (!this.isBlack(x, y) && thisNum) {
                     var letter = this.letterAt(x, y);
                     downEntries[thisNum]['word'] += letter;
                     downEntries[thisNum]['cells'].push([x, y]);

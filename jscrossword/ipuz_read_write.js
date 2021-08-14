@@ -4,7 +4,6 @@
 * MIT License https://opensource.org/licenses/MIT
 **/
 
-
 function xw_read_ipuz(data) {
     // If `data` is a string, convert to object
     if (typeof(data) === 'string') {
@@ -97,19 +96,19 @@ function xw_read_ipuz(data) {
       "id" is just a unique number to match up with the clues.
       "cells" is an array of objects giving the x and y values, in order
     */
-    var thisGrid = new xwGrid(data['solution'], block = BLOCK);
+    var thisGrid = new xwGrid(data['solution'], block=BLOCK);
     var words = [];
     var word_id = 1;
     var acrossEntries = thisGrid.acrossEntries();
-    for (var i=0; i<acrossEntries.length; i++) {
+    Object.keys(acrossEntries).forEach(function(i) {
         thisWord = {'id': word_id++, 'cells': acrossEntries[i]['cells']};
-        words.append(thisWord);
-    }
+        words.push(thisWord);
+    });
     var downEntries = thisGrid.downEntries();
-    for (var i=0; i<downEntries.length; i++) {
+    Object.keys(downEntries).forEach(function(i) {
         thisWord = {'id': word_id++, 'cells': downEntries[i]['cells']};
-        words.append(thisWord);
-    }
+        words.push(thisWord);
+    });
 
     /*
     * `clues` is an array of (usually) two objects.
@@ -135,70 +134,5 @@ function xw_read_ipuz(data) {
     return new JSCrossword(metadata, cells, words, clues);
 }
 
-function xw_write_jpz(metadata, cells, words, clues) {
-    var i, j;
-    var title = escapeHtml(metadata.title);
-    var author = escapeHtml(metadata.author);
-    var copyright = escapeHtml(metadata.copyright);
-    var description = escapeHtml(metadata.description);
-    var jpz_string = `<?xml version="1.0" encoding="UTF-8"?>
-<crossword-compiler-applet xmlns="http://crossword.info/xml/crossword-compiler">
-<applet-settings width="720" height="600" cursor-color="#00FF00" selected-cells-color="#80FF80">
-<completion friendly-submit="false" only-if-correct="true">Congratulations!  The puzzle is solved correctly</completion>
-<actions graphical-buttons="false" wide-buttons="false" buttons-layout="left"><reveal-word label="Reveal Word"></reveal-word><reveal-letter label="Reveal"></reveal-letter><check label="Check"></check><solution label="Solution"></solution><pencil label="Pencil"></pencil></actions>
-</applet-settings>
-<rectangular-puzzle xmlns="http://crossword.info/xml/rectangular-puzzle" alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ">
-<metadata>
-<title>${title}</title>
-<creator>${author}</creator>
-<copyright>${copyright}</copyright>
-<description>${description}</description>
-</metadata>
-<crossword>
-<grid width="${metadata.width}" height="${metadata.height}">
-<grid-look hide-lines="true" cell-size-in-pixels="25" />\n`;
-    /* take care of cells in the grid */
-    for (i=0; i<cells.length; i++) {
-        var cell = cells[i];
-        var clue_attrs = '';
-        var cell_arr = Object.keys(cell);
-        for (var j=0; j < cell_arr.length; j++) {
-            var my_key = cell_arr[j];
-            var my_val = cell[my_key];
-            if (my_key == 'x' || my_key == 'y') {
-                my_val = Number(my_val) + 1;
-            }
-            clue_attrs += `${my_key}="${my_val}" `;
-        }
-        jpz_string += `        <cell ${clue_attrs} />\n`;
-    }
-    jpz_string += "    </grid>\n";
-    /* take care of the words */
-    for (i=0; i<words.length; i++) {
-        var word = words[i];
-        jpz_string += `    <word id="${word.id}">\n`;
-        for (j=0; j<word.cells.length; j++) {
-            var word_cell = word.cells[j];
-            var this_x = Number(word_cell[0]) + 1;
-            var this_y = Number(word_cell[1]) + 1;
-            jpz_string += `        <cells x="${this_x}" y="${this_y}" />\n`;
-        }
-        jpz_string += `    </word>\n`;
-    }
-
-    /* clues */
-    for (i=0; i < clues.length; i++) {
-        jpz_string += `    <clues ordering="normal">\n`;
-        jpz_string += `        <title>${clues[i].title}</title>\n`;
-        for (j=0; j < clues[i].clue.length; j++) {
-            var my_clue = clues[i].clue[j];
-            var my_clue_text = escapeHtml(my_clue.text);
-            jpz_string += `        <clue word="${my_clue.word}" number="${my_clue.number}">${my_clue_text}</clue>\n`;
-        }
-        jpz_string += `    </clues>\n`;
-    }
-    jpz_string += `</crossword>
-</rectangular-puzzle>
-</crossword-compiler-applet>\n`;
-    return jpz_string;
+function xw_write_ipuz(metadata, cells, words, clues) {
 }

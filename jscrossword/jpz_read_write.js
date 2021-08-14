@@ -21,17 +21,15 @@ function xw_read_jpz(data1) {
         var data = data1;
     }
     else {
-        // I wish I could do this synchronously
-        /*
-        JSZip.loadAsync(data1).then(function (zip) {
-            var filename = Object.keys(zip.files)[0];
-            return zip.file(filename).async("string");
-        }).then(function (text) {
-            window.tmpData = text;
-            console.log(text);
-        });
-        */
-        throw "Zipped JPZ files are not currently supported.";
+        // Use jsunzip.js
+        var unzip = new JSUnzip();
+        var result = unzip.open(data1);
+        // there should only be one file in here
+        for (var n in unzip.files) {
+            var result2 = unzip.read(n);
+            var data = result2.data;
+            break;
+        }
     }
     // create a DOMParser object
     var xml_string = data.replace('&nbsp;', ' ');

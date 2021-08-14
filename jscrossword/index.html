@@ -5,11 +5,8 @@
     <script src="puz_read_write.js"></script>
     <script src="jpz_read_write.js"></script>
     <script src="jscrossword.js"></script>
-    <script src="jspdf.min.js"></script>
-    <script src="xw_pdf.js"></script>
     <script src="ipuz_read_write.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js" integrity="sha512-xQBQYt9UcgblF6aCMrwU1NkVA7HCXaSN2oq0so80KO+y68M+n64FOcqgav4igHe6D5ObBLIf68DWv+gfBowczg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js" integrity="sha512-EAKzSKex+PXC0U9OG13r1059ysjrjkJEpZoONCnZa0mBROY28iBOOxZSErUVw1LzLr2+U5PhR7zPCPKidUVJqg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="jsunzip.js"></script>
 </head>
 
 <body>
@@ -42,7 +39,7 @@ function handleFileSelect(evt) {
                     var xw;
                     if (filename.endsWith('.puz')) {
                         xw = xw_constructor.fromPuz(contents);
-                    } else if (filename.endsWith('jpz') || filename.endsWith('xml')) {
+                    } else if (filename.endsWith('jpz') || filename.endsWith('xml') || filename.endsWith('xpz')) {
                         xw = xw_constructor.fromJPZ(contents);
                     } else if (filename.endsWith('ipuz')) {
                         xw = xw_constructor.fromIpuz(contents);
