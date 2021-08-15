@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <script src="../jscrossword/jscrossword_combined.js"></script>
+    <script src="submission_checker.js"></script>
+</head>
+
+<body>
+
+<input type="file" id="files" name="files" accept=".puz,.xml,.ipuz,.jpz,.xpz" />
+
+<div id="results"></div>
+
+<script type="text/javascript">
+
+
+var MY_GLOBAL;
+
+/** Handling form submission **/
+function handleFileSelect(evt) {
+    const files = evt.target.files; // FileList object
+
+    // files is a FileList of File objects.
+    for (let i = 0, f; f = files[i]; i++) {
+        // Only process small files.
+        if (f.size >= 75000) {
+            alert('This file is too big.');
+            continue;
+        }
+        if (f) {
+            var filename = f.name.toLowerCase();
+            const r = new FileReader();
+            r.onload = (function (theFile) {
+                return function (e) {
+                    let contents = e.target.result;
+                    var xw_constructor = new JSCrossword();
+                    var xw = xw_constructor.fromData(contents);
+                    document.getElementById('results').innerHTML = submission_check_html(xw);
+                };
+            })(f);
+            r.readAsBinaryString(f);
+        } else {
+            alert("Failed to load file");
+        }
+    }
+}
+document.getElementById('files').addEventListener('change', handleFileSelect, false);
+</script>
+
+</body>
+</HTML>
