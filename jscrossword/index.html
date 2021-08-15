@@ -2,11 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-    <script src="puz_read_write.js"></script>
-    <script src="jpz_read_write.js"></script>
-    <script src="jscrossword.js"></script>
-    <script src="ipuz_read_write.js"></script>
-    <script src="jsunzip.js"></script>
+    <script src="jscrossword_combined.js"></script>
 </head>
 
 <body>
@@ -37,15 +33,7 @@ function handleFileSelect(evt) {
                     let contents = e.target.result;
                     var xw_constructor = new JSCrossword();
                     var xw;
-                    if (filename.endsWith('.puz')) {
-                        xw = xw_constructor.fromPuz(contents);
-                    } else if (filename.endsWith('jpz') || filename.endsWith('xml') || filename.endsWith('xpz')) {
-                        xw = xw_constructor.fromJPZ(contents);
-                    } else if (filename.endsWith('ipuz')) {
-                        xw = xw_constructor.fromIpuz(contents);
-                    } else {
-                        throw 'file type not supported';
-                    }
+                    xw = xw_constructor.fromData(contents);
                     //jscrossword_to_pdf(xw);
                     //var jpz_str = xw.toJPZString();
                     //file_download(jpz_str, 'test.jpz', 'text/xml');

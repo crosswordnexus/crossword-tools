@@ -29,8 +29,6 @@ class xwGrid {
         for (var y=0; y < this.height; y++) {
             var thisNumbers = [];
             for (var x=0; x < this.width; x++) {
-                if (this.isBlack(x, y)) {
-                }
                 if (this.startAcrossWord(x, y) || this.startDownWord(x, y)) {
                     thisNumbers.push(thisNumber);
                     thisNumber += 1;
@@ -83,9 +81,7 @@ class xwGrid {
         }
         return downEntries;
     }
-
 }
-
 
 // function to get an index from an i, j, and width
 function xw_ij_to_index(i, j, w) {
@@ -177,29 +173,51 @@ class JSCrossword {
     /**
     * useful functions
     **/
-    /** get the full word from a word ID **/
-    wordid_to_word(id) {
-        var entry = '';
-        var this_word;
-        this.words.forEach(function(w) {
-            if (w.id == id) {
-                this_word = w;
-            }
-        });
-        // take a slight dynamic programming approach
-        // and get our cells the way we want before looping
-        var cell_obj = {};
+
+    /** Create a solution array **/
+    create_solution_array() {
+        // initialize an empty array given the width and height
+        var h = this.metadata.height;
+        var w = this.metadata.width;
+        var solutionArray = Array.from({ length: h }, () =>
+            Array.from({ length: w }, () => false)
+        );
+        // Loop through the "cells" array and populate
         this.cells.forEach(function(c) {
-            var _key = c.x.toString() + '-' + c.y.toString();
-            var soln = c.solution;
-            cell_obj[_key] = soln;
+            solutionArray[c.y][c.x] = c.solution;
         });
-        // go through this word and get the solution for each cell
-        this_word.cells.forEach(function(c) {
-            var new_key = c[0].toString() + '-' + c[1].toString();
-            entry += cell_obj[new_key];
+        this.solution_array = solutionArray;
+    }
+
+    /** Get the solution array **/
+    get_solution_array() {
+        if (!this.solution_array) {
+            this.create_solution_array();
+        }
+        return this.solution_array;
+    }
+
+    /** Create a mapping of word ID to entry **/
+    create_entry_mapping() {
+        var soln_arr = this.get_solution_array();
+        var entryMapping = {};
+        this.words.forEach(function(w) {
+            var _id = w.id;
+            var entry = '';
+            w.cells.forEach(function(arr) {
+                entry += soln_arr[arr[1]][arr[0]];
+            });
+            entryMapping[_id] = entry;
         });
-        return entry;
+        this.entry_mapping = entryMapping;
+    }
+
+    /** Get the entry mapping **/
+    get_entry_mapping() {
+        if (!this.entry_mapping) {
+            this.create_entry_mapping();
+        }
+        return this.entry_mapping;
     }
 
     /**
@@ -224,6 +242,20 @@ class JSCrossword {
     // requires ipuz_read_write.js
     fromIpuz(data) {
         return xw_read_ipuz(data);
+    }
+
+    /* try to determine the puzzle type */
+    fromData(data) {
+        try {
+            var puzdata = PUZAPP.parsepuz(data);
+            return jscrossword_from_puz(puzdata);
+        } catch (error) {
+            try {
+                return xw_read_jpz(data);
+            } catch (error2) {
+                return xw_read_ipuz(data);
+            }
+        }
     }
 
     /**

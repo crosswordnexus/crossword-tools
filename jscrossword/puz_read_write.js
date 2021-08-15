@@ -1,19 +1,23 @@
-// Parts of this code from xroz
-// xroz - play crosswords within your browser
-// Author: Alex Stangl  8/14/2011
-// Copyright 2011, Alex Stangl. All Rights Reserved.
-// Licensed under ISC license (see LICENSE file)
-// https://github.com/astangl/xroz/blob/master/LICENSE
+/**
+* PUZ reading/writing functions
 
-// Other parts from Anagrind
-// Copyright (c) 2020 Rowan
-// MIT license
+* Parts of this code from xroz
+* xroz - play crosswords within your browser
+* Author: Alex Stangl  8/14/2011
+* Copyright 2011, Alex Stangl. All Rights Reserved.
+* Licensed under ISC license (see LICENSE file)
+* https://github.com/astangl/xroz/blob/master/LICENSE
 
-// Remainder of this code (c) 2016-2021 Alex Boisvert
-// licensed under MIT license
-// https://opensource.org/licenses/MIT
+* Other parts from Confuzzle
+* Copyright (c) 2020 Rowan Katekar
+* https://github.com/rjkat/confuzzle
+* MIT license
 
-//
+* Remainder of this code (c) 2016-2021 Alex Boisvert
+* licensed under MIT license
+* https://opensource.org/licenses/MIT
+**/
+
 /*jslint browser: true, bitwise: true, plusplus: true */
 var ActiveXObject, parsedPuz, filecontents, PUZAPP = {};
 (function () {
@@ -161,7 +165,7 @@ var ActiveXObject, parsedPuz, filecontents, PUZAPP = {};
 		var sanity_check = bytes.match('ACROSS&DOWN');
 		if (!sanity_check)
 		{
-			alert('Not a .puz file!');
+			console.log('Not a .puz file!');
 			throw {
                 name: "BADMAGICNUMBER",
                 message: "File did not contain expected magic number, contained '" + filemagic + "'."
@@ -201,7 +205,7 @@ var ActiveXObject, parsedPuz, filecontents, PUZAPP = {};
 				sdw,
 				isBlack;
         if (filemagic !== "ACROSS&DOWN\u0000") {
-			alert('Not a .puz file!');
+			console.log('Not a .puz file!');
             throw {
                 name: "BADMAGICNUMBER",
                 message: "File did not contain expected magic number, contained '" + filemagic + "'."
@@ -269,7 +273,7 @@ var ActiveXObject, parsedPuz, filecontents, PUZAPP = {};
                 retval.gext = bytes.substring(offset + 8, offset + 8 + len);
             }
             offset += len + 9;
-            //alert("Extra section " + sectName);
+            //console.log("Extra section " + sectName);
         }
         // Now I'm going to add in some more info, explicitly
         // pulling the clues and entries

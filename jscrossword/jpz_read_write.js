@@ -46,7 +46,7 @@ function xw_read_jpz(data1) {
     var crossword, puzzle, jpz_metadata;
     puzzle = xmlDoc.getElementsByTagName('rectangular-puzzle');
     if (!puzzle.length) {
-        alert(ERR_PARSE_JPZ);
+        console.log(ERR_PARSE_JPZ);
         return;
     }
 
@@ -65,7 +65,7 @@ function xw_read_jpz(data1) {
     // metadata
     jpz_metadata = puzzle[0].getElementsByTagName('metadata');
     if (!jpz_metadata.length) {
-        alert('could not find metadata');
+        console.log('could not find metadata');
         return;
     }
 
@@ -154,33 +154,45 @@ function xw_read_jpz(data1) {
         }
         cells.push(new_cell);
     }
+
     // WORDS
     var words = [];
     for (i = 0; (word = xml_words[i]); i++) {
         var id = word.getAttribute('id');
         var x = word.getAttribute('x');
         var y = word.getAttribute('y');
-        var split_x = x.split('-');
-        var split_y = y.split('-');
         var word_cells = [];
-        if (split_x.length > 1) {
-            var x_from = Number(split_x[0]); var x_to = Number(split_x[1]);
-            var y1 = Number(split_y[0]);
-            for (var k=x_from;
-                (x_from < x_to ? k <= x_to : k >= x_to);
-                (x_from < x_to ? k++ : k--)) {
-                word_cells.push([k-1, y1-1]);
-            }
-        } else if (split_y.length > 1) {
-            var y_from = Number(split_y[0]); var y_to = Number(split_y[1]);
-            var x1 = Number(split_x[0]);
-            for (var k=y_from;
-                (y_from < y_to ? k <= y_to : k >= y_to);
-                (y_from < y_to ? k++ : k--)) {
-                word_cells.push([x1-1, k-1]);
+        if (x && y) {
+            var split_x = x.split('-');
+            var split_y = y.split('-');
+            if (split_x.length > 1) {
+                var x_from = Number(split_x[0]); var x_to = Number(split_x[1]);
+                var y1 = Number(split_y[0]);
+                for (var k=x_from;
+                    (x_from < x_to ? k <= x_to : k >= x_to);
+                    (x_from < x_to ? k++ : k--)) {
+                    word_cells.push([k-1, y1-1]);
+                }
+            } else if (split_y.length > 1) {
+                var y_from = Number(split_y[0]); var y_to = Number(split_y[1]);
+                var x1 = Number(split_x[0]);
+                for (var k=y_from;
+                    (y_from < y_to ? k <= y_to : k >= y_to);
+                    (y_from < y_to ? k++ : k--)) {
+                    word_cells.push([x1-1, k-1]);
+                }
+            } else {
+                word_cells.push([split_x[0], split_y[0]]);
             }
         } else {
-            word_cells.push([split_x[0], split_y[0]]);
+            // the word must have "cells" attributes
+            var wc = word.getElementsByTagName('cells');
+            for (var j=0; j<wc.length; j++) {
+                cell = wc[j];
+                x = cell.getAttribute('x');
+                y = cell.getAttribute('y');
+                word_cells.push([x-1, y-1]);
+            }
         }
         words.push({'id': id, 'cells': word_cells});
     }
@@ -192,7 +204,6 @@ function xw_read_jpz(data1) {
     } else {
         for (i = 0; (clues_block = xml_clues[i]); i++) {
             var title_el = clues_block.getElementsByTagName('title')[0];
-            //console.log(title_el);
             var clues_el = clues_block.getElementsByTagName('clue');
             var title = title_el.innerHTML.trim();
             var this_clue = [];
