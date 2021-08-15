@@ -70,8 +70,8 @@ function xw_read_ipuz(data) {
             var solution = data['solution'][y][x];
             // type
             var type = null;
-            if (solution == BLOCK) {
-                type == 'block';
+            if (solution === BLOCK) {
+                type = 'block';
             }
             var new_cell = {
                 x: x,
