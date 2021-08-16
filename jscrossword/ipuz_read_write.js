@@ -17,6 +17,7 @@ function xw_read_ipuz(data) {
 
     // determine what represents a block
     const BLOCK = data['block'] || '#';
+    const EMPTY = data['empty'] || '0';
 
     // We only support "crossword" for now
     // TODO: add in acrostic support
@@ -49,30 +50,55 @@ function xw_read_ipuz(data) {
     var cells = [];
     for (var y=0; y < height; y++) {
         for (var x=0; x < width; x++) {
+            // the cell is void if the spot is NULL
+            var is_void = (data['puzzle'][y][x] === null);
             // number
-            var background_shape = null;
-            var background_color = null;
-            var cell_attributes = data['puzzle'][y][x];
+            var cell_attributes = data['puzzle'][y][x] || {};
+            // read in the style attribute
+            var style = cell_attributes.style || {};
             if (typeof(cell_attributes) !== 'object') {
                 var number = cell_attributes.toString();
             }
             else {
                 var number = cell_attributes['cell'];
-                if (cell_attributes.style) {
-                    background_shape = cell_attributes.style.shapebg;
-                    background_color = cell_attributes.style.color;
-                }
+                if (number === EMPTY) {number = null;}
             }
-            if (number === 0 || number === BLOCK) {
+            if (number === EMPTY || number === BLOCK || number === 0) {
                 number = null;
             }
             // solution
-            var solution = data['solution'][y][x];
+            var solution = '';
+            try {
+                solution = data['solution'][y][x];
+            } catch {}
             // type
             var type = null;
             if (solution === BLOCK) {
                 type = 'block';
             }
+            // bars
+            var bars = {};
+            if (style.barred) {
+                bars['bottom-bar'] = style.barred.includes('B');
+                bars['right-bar'] = style.barred.includes('R');
+                bars['top-bar'] = style.barred.includes('T');
+                bars['left-bar'] = style.barred.includes('L');
+            }
+
+            // background shape and color
+            background_shape = style.shapebg;
+            background_color = style.color;
+            // top-right numbers
+            var top_right_number = null;
+            if (style.mark) {
+                top_right_number = style.mark.TR;
+                number = style.mark.TL;
+                // TODO: we don't currently support bottom numbers
+                // we just read them in as `number` or `top_right_number` for now
+                if (!number) {number = style.mark.BL;}
+                if (!top_right_number) {top_right_number = style.mark.BR;}
+            }
+
             var new_cell = {
                 x: x,
                 y: y,
@@ -82,33 +108,18 @@ function xw_read_ipuz(data) {
                 "background-color": background_color,
                 "background-shape": background_shape,
                 letter: null,
-                top_right_number: null, // todo: we can get this
-                is_void: null,
+                top_right_number: top_right_number,
+                is_void: is_void,
                 clue: null,
-                value: null
+                value: null,
+                "bottom-bar": bars['bottom-bar'] || null,
+                "right-bar": bars['right-bar'] || null,
+                "top-bar": bars['top-bar'] || null,
+                "left-bar": bars['left-bar'] || null
             };
             cells.push(new_cell);
         } // end for x
     } // end for y
-
-    /*
-    * `words` is an array of objects, each with an "id" and a "cells" attribute
-      "id" is just a unique number to match up with the clues.
-      "cells" is an array of objects giving the x and y values, in order
-    */
-    var thisGrid = new xwGrid(data['solution'], block=BLOCK);
-    var words = [];
-    var word_id = 1;
-    var acrossEntries = thisGrid.acrossEntries();
-    Object.keys(acrossEntries).forEach(function(i) {
-        thisWord = {'id': word_id++, 'cells': acrossEntries[i]['cells']};
-        words.push(thisWord);
-    });
-    var downEntries = thisGrid.downEntries();
-    Object.keys(downEntries).forEach(function(i) {
-        thisWord = {'id': word_id++, 'cells': downEntries[i]['cells']};
-        words.push(thisWord);
-    });
 
     /*
     * `clues` is an array of (usually) two objects.
@@ -119,17 +130,58 @@ function xw_read_ipuz(data) {
          - a "word" which is the associated word ID
          - an optional "number"
     */
-    // Note: we only handle "Across" and "Down" in iPuz for now
-    // TODO: handle other directions
     var clues = [];
+    var words = [];
     word_id = 1;
-    ['Across', 'Down'].forEach( function(title) {
+    // Iterate through the titles of the clues
+    var titles = Object.keys(data['clues']);
+    if (titles === ['Down', 'Across']) {titles = ['Across', 'Down'];}
+    titles.forEach( function(title) {
         var thisClues = [];
         data['clues'][title].forEach( function (clue) {
-            thisClues.push({'word': word_id++, 'number': clue[0], 'text': clue[1]});
+            var number, text;
+            // a "clue" can be an array or an object
+            if (Array.isArray(clue)) {
+                number = clue[0];
+                text = clue[1];
+            } else {
+                number = clue.number;
+                text = clue.clue;
+            }
+            thisClues.push({'word': word_id, 'number': number, 'text': text});
+            // Cells are coupled with clues in iPuz
+            if (clue.cells) {
+                var thisCells = [];
+                clue.cells.forEach(function (thisCell) {
+                    thisCells.push([thisCell[0]-1, thisCell[1]-1]);
+                });
+                words.push({'id': word_id, 'cells': thisCells});
+            }
+            word_id += 1;
         });
         clues.push({'title': title, 'clue': thisClues});
     });
+
+    /*
+    * `words` is an array of objects, each with an "id" and a "cells" attribute
+      "id" is just a unique number to match up with the clues.
+      "cells" is an array of objects giving the x and y values, in order
+    */
+    // We only do this if we haven't already populated `words`
+    if (!words.length) {
+        var thisGrid = new xwGrid(data['solution'], block=BLOCK);
+        var word_id = 1;
+        var acrossEntries = thisGrid.acrossEntries();
+        Object.keys(acrossEntries).forEach(function(i) {
+            var thisWord = {'id': word_id++, 'cells': acrossEntries[i]['cells']};
+            words.push(thisWord);
+        });
+        var downEntries = thisGrid.downEntries();
+        Object.keys(downEntries).forEach(function(i) {
+            var thisWord = {'id': word_id++, 'cells': downEntries[i]['cells']};
+            words.push(thisWord);
+        });
+    }
 
     return new JSCrossword(metadata, cells, words, clues);
 }
