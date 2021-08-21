@@ -395,7 +395,7 @@ function xw_read_jpz(data1) {
         for (i = 0; (clues_block = xml_clues[i]); i++) {
             var title_el = clues_block.getElementsByTagName('title')[0];
             var clues_el = clues_block.getElementsByTagName('clue');
-            var title = title_el.innerHTML.trim();
+            var title = title_el.textContent.trim();
             var this_clue = [];
             var k, clue;
             for (k=0; clue = clues_el[k]; k++) {
