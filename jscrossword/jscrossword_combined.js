@@ -8,9 +8,7 @@ function xw_read_ipuz(data) {
     // If `data` is a string, convert to object
     if (typeof(data) === 'string') {
         // need to read as UTF-8 first (it's generally loaded as binary)
-        console.log(1);
         data = BinaryStringToUTF8String(data);
-        console.log(2);
         data = JSON.parse(data);
     }
     /*
@@ -579,13 +577,10 @@ class xwGrid {
 function BinaryStringToUTF8String(x) {
     // convert to bytes array
     var bytes = [];
-    console.log('a');
-    console.log(x.length);
     for (var i = 0; i < x.length; ++i) {
       var code = x.charCodeAt(i);
       bytes.push([code]);
     }
-    console.log('b');
     var bytes1 = new Uint8Array(bytes);
     return new TextDecoder("utf-8").decode(bytes1);
 }
