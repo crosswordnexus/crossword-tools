@@ -32,6 +32,16 @@ var ActiveXObject, parsedPuz, filecontents, PUZAPP = {};
         }
     }
 
+    // Conditionally convert to UTF-8 (based on .puz version)
+    function StringConverter(version) {
+        if (version.startsWith('1.')) { // iso-8859-1
+            return function(x) {return x;}
+        }
+        else {
+            return function(x) { return BinaryStringToUTF8String(x);}
+        }
+    }
+
     // get a binary byte from a string (bytes) at position offset
     function getByte(bytes, offset) {
         return bytes.charCodeAt(offset) % 256;
@@ -212,12 +222,14 @@ var ActiveXObject, parsedPuz, filecontents, PUZAPP = {};
             };
         }
         retval.version = bytes.substring(24, 27);
+        var string_convert = StringConverter(retval.version);
+
         retval.width = w;
         retval.height = h;
         retval.nbrClues = nbrClues;
-        retval.solution = bytes.substring(52, 52 + wh);
-        retval.strings = bytes.substring(strings_offset).split('\u0000', nbrClues + 4);
-        retval.grid = bytes.substring(grid_offset, grid_offset + wh);
+        retval.solution = string_convert(bytes.substring(52, 52 + wh));
+        retval.strings = string_convert(bytes.substring(strings_offset).split('\u0000', nbrClues + 4));
+        retval.grid = string_convert(bytes.substring(grid_offset, grid_offset + wh));
         // Replace "solution" with "grid" if the puzzle is filled
         if (retval.grid.indexOf('-') == -1)
 		{

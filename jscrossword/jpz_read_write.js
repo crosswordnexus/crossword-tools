@@ -17,20 +17,22 @@ function escapeHtml(unsafe) {
 function xw_read_jpz(data1) {
     var ERR_PARSE_JPZ = 'Error parsing JPZ file.';
     // check if it's zipped
+    var data;
     if (data1.match(/^<\?xml/)) {
-        var data = data1;
+        data = data1;
     }
     else {
-        // Use jsunzip.js
         var unzip = new JSUnzip();
         var result = unzip.open(data1);
         // there should only be one file in here
         for (var n in unzip.files) {
             var result2 = unzip.read(n);
-            var data = result2.data;
+            data = result2.data;
             break;
         }
     }
+    data = BinaryStringToUTF8String(data);
+    console.log(data);
     // create a DOMParser object
     var xml_string = data.replace('&nbsp;', ' ');
     var parser, xmlDoc;
@@ -92,12 +94,11 @@ function xw_read_jpz(data1) {
     metadata['crossword_type'] = crossword_type;
 
     // logic for check/reveal buttons
-    // TODO: expand on this
     var applet_settings = xmlDoc.getElementsByTagName('applet-settings');
     if (applet_settings.length) {
         var elt = applet_settings[0].getElementsByTagName('solution');
         if (!elt.length) {
-            metadata['hide_reveal'] = true;
+            metadata['has_reveal'] = false;
         }
     }
 

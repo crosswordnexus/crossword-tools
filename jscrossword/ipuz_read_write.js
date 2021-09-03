@@ -7,6 +7,8 @@
 function xw_read_ipuz(data) {
     // If `data` is a string, convert to object
     if (typeof(data) === 'string') {
+        // need to read as UTF-8 first (it's generally loaded as binary)
+        data = BinaryStringToUTF8String(data);
         data = JSON.parse(data);
     }
     /*
@@ -75,6 +77,8 @@ function xw_read_ipuz(data) {
             var type = null;
             if (solution === BLOCK) {
                 type = 'block';
+            } else if (data['puzzle'][y][x] === null) {
+                type = 'void';
             }
             // bars
             var bars = {};

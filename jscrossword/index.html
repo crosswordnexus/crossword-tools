@@ -26,6 +26,7 @@ function handleFileSelect(evt) {
             continue;
         }
         if (f) {
+            console.log(f);
             var filename = f.name.toLowerCase();
             const r = new FileReader();
             r.onload = (function (theFile) {
@@ -34,6 +35,8 @@ function handleFileSelect(evt) {
                     var xw_constructor = new JSCrossword();
                     var xw;
                     xw = xw_constructor.fromData(contents);
+                    console.log(xw);
+                    //xw.from(contents);
                     //jscrossword_to_pdf(xw);
                     //var jpz_str = xw.toJPZString();
                     //file_download(jpz_str, 'test.jpz', 'text/xml');
