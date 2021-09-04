@@ -80,6 +80,11 @@ function xw_read_ipuz(data) {
             } else if (data['puzzle'][y][x] === null) {
                 type = 'void';
             }
+            // filled-in letter
+            var letter = null;
+            if (data['puzzle'][y][x]) {
+                letter = data['puzzle'][y][x].value;
+            }
             // bars
             var bars = {};
             if (style.barred) {
@@ -111,7 +116,7 @@ function xw_read_ipuz(data) {
                 type: type,
                 "background-color": background_color,
                 "background-shape": background_shape,
-                letter: null,
+                letter: letter,
                 top_right_number: top_right_number,
                 is_void: is_void,
                 clue: null,

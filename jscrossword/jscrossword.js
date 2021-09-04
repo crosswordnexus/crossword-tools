@@ -112,31 +112,6 @@ function xw_index_to_ij(ix, w) {
     return [i, j];
 }
 
-function XMLElementToString(element) {
-    var i,
-        node,
-        nodename,
-        nodes = element.childNodes,
-        result = '';
-    for (i = 0; (node = nodes[i]); i++) {
-        if (node.nodeType === 3) {
-            result += node.textContent;
-        }
-        if (node.nodeType === 1) {
-            nodename = node.nodeName;
-            result +=
-              '<' +
-              nodename +
-              '>' +
-              XMLElementToString(node) +
-              '</' +
-              nodename +
-              '>';
-        }
-    }
-    return result;
-}
-
 /** Generic file download function **/
 function file_download(data, filename, type) {
     var file = new Blob([data], {type: type});
@@ -173,6 +148,7 @@ class JSCrossword {
       - others: background-color (RGB), background-shape (circle),
           bottom-bar, right-bar, top-bar, left-bar (= true if exist)
           top_right_number
+          value (a filled-in letter, if any)
 
     * `words` is an array of objects, each with an "id" and a "cells" attribute
       "id" is just a unique number to match up with the clues.

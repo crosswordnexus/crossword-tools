@@ -14,6 +14,31 @@ function escapeHtml(unsafe) {
          .replace(/'/g, "&#039;");
  }
 
+function XMLElementToString(element) {
+    var i,
+     node,
+     nodename,
+     nodes = element.childNodes,
+     result = '';
+    for (i = 0; (node = nodes[i]); i++) {
+        if (node.nodeType === 3) {
+            result += node.textContent;
+        }
+        if (node.nodeType === 1) {
+             nodename = node.nodeName;
+             result +=
+               '<' +
+               nodename +
+               '>' +
+               XMLElementToString(node) +
+               '</' +
+               nodename +
+               '>';
+        }
+    }
+ return result;
+}
+
 function xw_read_jpz(data1) {
     var ERR_PARSE_JPZ = 'Error parsing JPZ file.';
     // check if it's zipped
@@ -32,7 +57,6 @@ function xw_read_jpz(data1) {
         }
     }
     data = BinaryStringToUTF8String(data);
-    console.log(data);
     // create a DOMParser object
     var xml_string = data.replace('&nbsp;', ' ');
     var parser, xmlDoc;

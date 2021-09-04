@@ -80,6 +80,11 @@ function xw_read_ipuz(data) {
             } else if (data['puzzle'][y][x] === null) {
                 type = 'void';
             }
+            // filled-in letter
+            var letter = null;
+            if (data['puzzle'][y][x]) {
+                letter = data['puzzle'][y][x].value;
+            }
             // bars
             var bars = {};
             if (style.barred) {
@@ -111,7 +116,7 @@ function xw_read_ipuz(data) {
                 type: type,
                 "background-color": background_color,
                 "background-shape": background_shape,
-                letter: null,
+                letter: letter,
                 top_right_number: top_right_number,
                 is_void: is_void,
                 clue: null,
@@ -208,6 +213,31 @@ function escapeHtml(unsafe) {
          .replace(/'/g, "&#039;");
  }
 
+function XMLElementToString(element) {
+    var i,
+     node,
+     nodename,
+     nodes = element.childNodes,
+     result = '';
+    for (i = 0; (node = nodes[i]); i++) {
+        if (node.nodeType === 3) {
+            result += node.textContent;
+        }
+        if (node.nodeType === 1) {
+             nodename = node.nodeName;
+             result +=
+               '<' +
+               nodename +
+               '>' +
+               XMLElementToString(node) +
+               '</' +
+               nodename +
+               '>';
+        }
+    }
+ return result;
+}
+
 function xw_read_jpz(data1) {
     var ERR_PARSE_JPZ = 'Error parsing JPZ file.';
     // check if it's zipped
@@ -226,7 +256,6 @@ function xw_read_jpz(data1) {
         }
     }
     data = BinaryStringToUTF8String(data);
-    console.log(data);
     // create a DOMParser object
     var xml_string = data.replace('&nbsp;', ' ');
     var parser, xmlDoc;
@@ -597,31 +626,6 @@ function xw_index_to_ij(ix, w) {
     return [i, j];
 }
 
-function XMLElementToString(element) {
-    var i,
-        node,
-        nodename,
-        nodes = element.childNodes,
-        result = '';
-    for (i = 0; (node = nodes[i]); i++) {
-        if (node.nodeType === 3) {
-            result += node.textContent;
-        }
-        if (node.nodeType === 1) {
-            nodename = node.nodeName;
-            result +=
-              '<' +
-              nodename +
-              '>' +
-              XMLElementToString(node) +
-              '</' +
-              nodename +
-              '>';
-        }
-    }
-    return result;
-}
-
 /** Generic file download function **/
 function file_download(data, filename, type) {
     var file = new Blob([data], {type: type});
@@ -658,6 +662,7 @@ class JSCrossword {
       - others: background-color (RGB), background-shape (circle),
           bottom-bar, right-bar, top-bar, left-bar (= true if exist)
           top_right_number
+          value (a filled-in letter, if any)
 
     * `words` is an array of objects, each with an "id" and a "cells" attribute
       "id" is just a unique number to match up with the clues.
