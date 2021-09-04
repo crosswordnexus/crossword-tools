@@ -41,6 +41,7 @@ function draw_crossword_grid(doc, xw, options)
 
         // thank you https://stackoverflow.com/a/5624139
         function hexToRgb(hex) {
+            hex = hex || '#FFFFFF';
             // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
             var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
             hex = hex.replace(shorthandRegex, function(m, r, g, b) {
@@ -68,7 +69,7 @@ function draw_crossword_grid(doc, xw, options)
 
         if (cell['background-color']) {
             var filled_string = 'F';
-            var rgb = hexToRgb(cell.color);
+            var rgb = hexToRgb(cell['background-color']);
             doc.setFillColor(rgb.r, rgb.g, rgb.b);
             doc.setDrawColor(options.gray.toString());
             // Draw one filled square and then one unfilled
@@ -92,7 +93,7 @@ function draw_crossword_grid(doc, xw, options)
         // top-right numbers
         var top_right_number = cell.top_right_number ? cell.top_right_number : '';
         doc.setFontSize(number_size);
-        doc.text(x1 + cell_size - number_size, y1 + number_size, top_right_number);
+        doc.text(x1 + cell_size - number_offset, y1 + number_size, top_right_number, null, null, 'right');
 
         // letters
         doc.setFontType('normal');
@@ -133,19 +134,25 @@ function draw_crossword_grid(doc, xw, options)
     var width = xw.metadata.width;
     var height = xw.metadata.height;
     xw.cells.forEach(function(c) {
+        // don't draw a square if we have a void
+        if (c.is_void || (c.type === 'block' && c['background-color'] === '#FFFFFF')) {
+          return;
+        }
         var x_pos = options.x0 + c.x * cell_size;
         var y_pos = options.y0 + c.y * cell_size;
         // letter
         var letter = c.solution || '';
         if (!options.grid_letters) {letter = '';}
+        letter = letter || c.letter || '';
         var filled = c.type == 'block';
         // number
         var number = c['number'] || '';
         if (!options.grid_numbers) {number = '';}
         // circle
         var circle = c['background-shape'] == 'circle';
+        // draw the square unless it's a void
+        // or a block with a white background
         draw_square(doc,x_pos,y_pos,cell_size,number,letter,filled,c);
-
     });
 }
 
@@ -203,11 +210,11 @@ function jscrossword_to_pdf(xw, options={}) {
             options.num_columns = Math.ceil(word_count/10);
             options.num_full_columns = 0;
         }
-        else if (xw_height > 17) {
+        else if (xw_height >= 17) {
             options.num_columns = 5;
             options.num_full_columns = 2;
         }
-        else if (xw_width >= 17) {
+        else if (xw_width > 17) {
             options.num_columns = 4;
             options.num_full_columns = 1;
         }
@@ -333,7 +340,7 @@ function jscrossword_to_pdf(xw, options={}) {
         var lines1 = doc.splitTextToSize(clean_clue, col_width);
 
         // if there's no <B> or <I> in the clue just return lines1
-        if (clue.toUpperCase().indexOf('<B>') == -1 && clue.toUpperCase().indexOf('<I>') == -1) {
+        if (clue.toUpperCase().indexOf('<B') == -1 && clue.toUpperCase().indexOf('<I') == -1) {
             return lines1;
         }
 
@@ -760,7 +767,7 @@ function jscrossword_to_nyt(xw, options={})
         // print the entry
         doc.setFontSize(options.clue_entry_pt).text(entry_xpos,entry_ypos,entry);
 
-        // adjust the coordinates (double-spacing
+        // adjust the coordinates (double-spacing)
         clue_ypos += options.clue_entry_pt;
         entry_ypos = clue_ypos;
     }
