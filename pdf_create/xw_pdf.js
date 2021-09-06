@@ -49,8 +49,8 @@ const printCharacters = (doc, textObject, startY, startX, fontSize) => {
 // helper function for bold and italic clues
 function split_text_to_size_bi(clue, col_width, doc) {
     // replace multiple whitespaces with just one
-    clue = clue.replace('\n', ' ');
-    clue = clue.replace(/\s+/g, ' ');
+    //clue = clue.replace('\n', ' ');
+    //clue = clue.replace(/\s+/g, ' ');
 
     // get the clue with HTML stripped out
     var el = document.createElement( 'html' );
