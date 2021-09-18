@@ -36,6 +36,7 @@ function handleFileSelect(evt) {
                     let contents = e.target.result;
                     var xw_constructor = new JSCrossword();
                     var xw = xw_constructor.fromData(contents);
+                    console.log(xw);
                     document.getElementById('results').innerHTML = submission_check_html(xw);
                 };
             })(f);
