@@ -52,8 +52,10 @@ function xwDupes(xw) {
     Object.keys(entry_map).forEach(x => entries.add(entry_map[x]))
 
     xw.clues.forEach(function(clueList) {
+        var thisCluesDirection = clueList.title;
         clueList.clue.forEach(function (c) {
             var clue = c.text;
+            var num = c.number;
             // Loop through words in "clue"
             var words = clue.split(/[ -]/);
             words.forEach(function (word) {
@@ -64,7 +66,7 @@ function xwDupes(xw) {
                 if (word.length >= 4) {
                     entries.forEach(function (entry) {
                         if (entry.match(word)) {
-                            dupes.push({'entry': entry, 'clue': clue});
+                            dupes.push({'entry': entry, 'clue': clue, 'clueDirection': thisCluesDirection, 'clueNumber': num});
                         }
                     }); // end for entry
                 } // end if word length
@@ -109,7 +111,7 @@ function submission_check_html(xw) {
         html += `<p style="color:${color};">`;
         if (x.name == 'Dupes') {
             x.value.forEach(function (d) {
-                html += `${d.entry} / ${d.clue}<br />\n`;
+                html += `${d.entry} / ${d.clue} [${d.clueNumber}-${d.clueDirection}]<br />\n`;
             });
             if (!x.value.length) {
                 html += 'No dupes found.';
