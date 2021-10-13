@@ -308,7 +308,7 @@ def main(argv=None):
                 # a comma-separated list of words not to include
                 excluded=[_.strip().lower() for _ in a.split(',')]
             elif o in ('-i', '--included'):
-                # a comma-separated list of words not to include
+                # a comma-separated list of words to include
                 included=[_.strip().lower() for _ in a.split(',')]
 
         # Execute the code
