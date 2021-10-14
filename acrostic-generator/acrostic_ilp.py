@@ -9,8 +9,11 @@ import random
 import time
 import sys, getopt, os
 
-WORDLIST1 = r'acrostic_wordlist.txt'
+WORDLIST1 = r'xwordlist.dict'
 MIN_SCORE = 90
+
+MIN_WORD_LENGTH = 4
+MAX_WORD_LENGTH = 12
 
 ###################
 
@@ -234,7 +237,8 @@ def create_acrostic(quote, source, excluded_words=[]):
         for line in fid:
             line = line.strip().lower()
             word, score = line.split(';')
-            if int(score) >= MIN_SCORE and len(word) >= 4 and len(word) <= 12 \
+            if int(score) >= MIN_SCORE and len(word) >= MIN_WORD_LENGTH \
+                and len(word) <= MAX_WORD_LENGTH \
                 and word[0] in source_letters and is_substring(word, quote_alpha) \
                 and word not in excluded_words_set:
                 # Create a variable from this word
@@ -308,7 +312,7 @@ def main(argv=None):
                 # a comma-separated list of words not to include
                 excluded=[_.strip().lower() for _ in a.split(',')]
             elif o in ('-i', '--included'):
-                # a comma-separated list of words to include
+                # a comma-separated list of words not to include
                 included=[_.strip().lower() for _ in a.split(',')]
 
         # Execute the code
