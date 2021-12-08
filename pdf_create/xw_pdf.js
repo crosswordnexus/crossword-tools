@@ -223,9 +223,9 @@ function draw_crossword_grid(doc, xw, options)
             for (var key in bar) {
                 if (bar.hasOwnProperty(key)) {
                     if (bar[key]) {
-                        doc.setLineWidth(options.bar_width);
+                        //doc.setLineWidth(options.bar_width);
                         doc.line(bar_start[key][0], bar_start[key][1], bar_end[key][0], bar_end[key][1]);
-                        doc.setLineWidth(options.line_width);
+                        //doc.setLineWidth(options.line_width);
                     }
                 }
             }
@@ -429,7 +429,7 @@ function jscrossword_to_pdf(xw, options={}) {
         var clue_padding = clue_pt / 3;
         doc.setFontSize(clue_pt);
 
-        doc.setLineWidth(options.line_width);
+        //doc.setLineWidth(options.line_width);
 
         // Print the clues
         var line_xpos = margin;
