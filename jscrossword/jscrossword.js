@@ -2,6 +2,23 @@
 * Class for a crossword grid
 **/
 class xwGrid {
+    constructor(cells) {
+        this.cells = cells;
+        this.height = null;
+        this.width = null;
+        this.numbers = this.gridNumbering();
+    }
+    /* return the cell at (x,y) */
+    cellAt(x, y) {
+        return this.cells.find((cell) => (cell.x == x && cell.y == y));
+    }
+    isBlack(x, y) {
+        var thisCell = this.cellAt(x, y);
+        return (thisCell.type == 'void' || thisCell.type == 'block');
+    }
+
+}
+class xwGrid {
     constructor(soln_arr, block='.') {
         this.solution = soln_arr;
         this.block = block;
@@ -14,11 +31,14 @@ class xwGrid {
     isBlack(x, y) {
         return this.solution[y][x] === this.block;
     }
+
+
+    // both startAcrossWord and startDownWord have to account for bars
     startAcrossWord(x, y) {
-        return (x === 0 || this.isBlack(x - 1, y)) && x < this.width - 1 && !this.isBlack(x, y) && !this.isBlack(x + 1, y);
+        return hasBlack(x, y, 'left') && x < this.width - 1 && !this.isBlack(x, y) && !this.hasBlack(x, y, 'right');
     }
     startDownWord(x, y) {
-        return (y === 0 || this.isBlack(x, y - 1)) && y < this.height - 1 && !this.isBlack(x, y) && !this.isBlack(x, y + 1);
+        return hasBlack(x, y, 'top') && y < this.height - 1 && !this.isBlack(x, y) && !this.hasBlack(x, y, 'bottom');
     }
     letterAt(x, y) {
         return this.solution[y][x];
