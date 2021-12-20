@@ -13,7 +13,7 @@ class xwGrid {
         return this.cells.find((cell) => (cell.x == x && cell.y == y));
     }
     letterAt(x, y) {
-        return this.cellAt(x, y).solution.value;
+        return this.cellAt(x, y).solution;
     }
     isBlack(x, y) {
         var thisCell = this.cellAt(x, y);

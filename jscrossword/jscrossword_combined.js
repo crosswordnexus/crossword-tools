@@ -72,6 +72,10 @@ function xw_read_ipuz(data) {
             var solution = '';
             try {
                 solution = data['solution'][y][x];
+                if (solution.value) {
+                    solution = solution.value;
+                }
+
             } catch {}
             // type
             var type = null;
@@ -542,7 +546,7 @@ class xwGrid {
         return this.cells.find((cell) => (cell.x == x && cell.y == y));
     }
     letterAt(x, y) {
-        return this.cellAt(x, y).solution.value;
+        return this.cellAt(x, y).solution;
     }
     isBlack(x, y) {
         var thisCell = this.cellAt(x, y);

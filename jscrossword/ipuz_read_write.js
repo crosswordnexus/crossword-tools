@@ -72,6 +72,10 @@ function xw_read_ipuz(data) {
             var solution = '';
             try {
                 solution = data['solution'][y][x];
+                if (solution.value) {
+                    solution = solution.value;
+                }
+
             } catch {}
             // type
             var type = null;
