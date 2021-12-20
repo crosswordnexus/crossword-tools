@@ -4,21 +4,122 @@
 class xwGrid {
     constructor(cells) {
         this.cells = cells;
-        this.height = null;
-        this.width = null;
+        this.height = Math.max.apply(null, cells.map(c => parseInt(c.y))) + 1;
+        this.width = Math.max.apply(null, cells.map(c => parseInt(c.x))) + 1;
         this.numbers = this.gridNumbering();
     }
     /* return the cell at (x,y) */
     cellAt(x, y) {
         return this.cells.find((cell) => (cell.x == x && cell.y == y));
     }
+    letterAt(x, y) {
+        return this.cellAt(x, y).solution.value;
+    }
     isBlack(x, y) {
         var thisCell = this.cellAt(x, y);
         return (thisCell.type == 'void' || thisCell.type == 'block');
     }
+    /* check if we have a black square in a given direction */
+    hasBlack(x, y, dir) {
+        var mapping_dict = {
+          'right': {'xcheck': this.width-1, 'xoffset': 1, 'yoffset': 0, 'dir2': 'left'}
+        , 'left': {'xcheck': 0, 'xoffset': -1, 'yoffset': 0, 'dir2': 'right'}
+        , 'top': {'ycheck': 0, 'xoffset': 0, 'yoffset': -1, 'dir2': 'bottom'}
+        , 'bottom': {'ycheck': this.height-1, 'xoffset': 0, 'yoffset': 1, 'dir2': 'top'}
+        };
+        var md = mapping_dict[dir];
+        if (x === md['xcheck'] || y === md['ycheck']) {
+          return true;
+        }
+        else if (this.isBlack(x + md['xoffset'], y + md['yoffset'])) {
+          return true;
+        }
+        else if (this.cellAt(x, y)[dir + '-bar']) {
+          return true;
+        }
+        else if (this.cellAt(x + md['xoffset'], y + md['yoffset'])[md['dir2'] + '-bar']) {
+          return true;
+        }
+        return false;
+    }
 
+    // both startAcrossWord and startDownWord have to account for bars
+    startAcrossWord(x, y) {
+        return this.hasBlack(x, y, 'left') && x < this.width - 1 && !this.isBlack(x, y) && !this.hasBlack(x, y, 'right');
+    }
+    startDownWord(x, y) {
+        return this.hasBlack(x, y, 'top') && y < this.height - 1 && !this.isBlack(x, y) && !this.hasBlack(x, y, 'bottom');
+    }
+    // An array of grid numbers
+    gridNumbering() {
+        var numbers = [];
+        var thisNumber = 1;
+        for (var y=0; y < this.height; y++) {
+            var thisNumbers = [];
+            for (var x=0; x < this.width; x++) {
+                if (this.startAcrossWord(x, y) || this.startDownWord(x, y)) {
+                    thisNumbers.push(thisNumber);
+                    thisNumber += 1;
+                }
+                else {
+                    thisNumbers.push(0);
+                }
+            }
+            numbers.push(thisNumbers);
+        }
+        return numbers;
+    }
+
+    acrossEntries() {
+        var acrossEntries = {}, x, y, thisNum;
+        for (y = 0; y < this.height; y++) {
+            for (x = 0; x < this.width; x++) {
+                if (this.startAcrossWord(x, y)) {
+                    thisNum = this.numbers[y][x];
+                    if (!acrossEntries[thisNum] && thisNum) {
+                        acrossEntries[thisNum] = {'word': '', 'cells': []};
+                    }
+                }
+                if (!this.isBlack(x, y) && thisNum) {
+                    var letter = this.letterAt(x, y);
+                    acrossEntries[thisNum]['word'] += letter;
+                    acrossEntries[thisNum]['cells'].push([x, y]);
+                }
+                // end the across entry if we hit the edge
+                if (x === this.width - 1) {
+                    thisNum = null;
+                }
+            }
+        }
+        return acrossEntries;
+    }
+
+    downEntries() {
+        var downEntries = {}, x, y, thisNum;
+        for (x = 0; x < this.width; x++) {
+            for (y = 0; y < this.height; y++) {
+                if (this.startDownWord(x, y)) {
+                    thisNum = this.numbers[y][x];
+                    if (!downEntries[thisNum] && thisNum) {
+                        downEntries[thisNum] = {'word': '', 'cells': []};
+                    }
+                }
+                if (!this.isBlack(x, y) && thisNum) {
+                    var letter = this.letterAt(x, y);
+                    downEntries[thisNum]['word'] += letter;
+                    downEntries[thisNum]['cells'].push([x, y]);
+                }
+                // end the down entry if we hit the bottom
+                if (y === this.height - 1) {
+                    thisNum = null;
+                }
+            }
+        }
+        return downEntries;
+    }
 }
-class xwGrid {
+
+class xwGrid2 {
     constructor(soln_arr, block='.') {
         this.solution = soln_arr;
         this.block = block;
@@ -30,15 +131,6 @@ class xwGrid {
     }
     isBlack(x, y) {
         return this.solution[y][x] === this.block;
-    }
-
-
-    // both startAcrossWord and startDownWord have to account for bars
-    startAcrossWord(x, y) {
-        return hasBlack(x, y, 'left') && x < this.width - 1 && !this.isBlack(x, y) && !this.hasBlack(x, y, 'right');
-    }
-    startDownWord(x, y) {
-        return hasBlack(x, y, 'top') && y < this.height - 1 && !this.isBlack(x, y) && !this.hasBlack(x, y, 'bottom');
     }
     letterAt(x, y) {
         return this.solution[y][x];
