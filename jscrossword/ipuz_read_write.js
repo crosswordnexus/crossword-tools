@@ -72,6 +72,10 @@ function xw_read_ipuz(data) {
             var solution = '';
             try {
                 solution = data['solution'][y][x];
+                if (solution.value) {
+                    solution = solution.value;
+                }
+
             } catch {}
             // type
             var type = null;
@@ -181,7 +185,7 @@ function xw_read_ipuz(data) {
     */
     // We only do this if we haven't already populated `words`
     if (!words.length) {
-        var thisGrid = new xwGrid(data['solution'], block=BLOCK);
+        var thisGrid = new xwGrid(cells);
         var word_id = 1;
         var acrossEntries = thisGrid.acrossEntries();
         Object.keys(acrossEntries).forEach(function(i) {
