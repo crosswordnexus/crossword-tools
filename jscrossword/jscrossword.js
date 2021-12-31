@@ -86,7 +86,7 @@ class xwGrid {
                     acrossEntries[thisNum]['cells'].push([x, y]);
                 }
                 // end the across entry if we hit the edge
-                if (x === this.width - 1) {
+                if (this.hasBlack(x, y, 'right')) {
                     thisNum = null;
                 }
             }
@@ -110,7 +110,7 @@ class xwGrid {
                     downEntries[thisNum]['cells'].push([x, y]);
                 }
                 // end the down entry if we hit the bottom
-                if (y === this.height - 1) {
+                if (this.hasBlack(x, y, 'bottom')) {
                     thisNum = null;
                 }
             }

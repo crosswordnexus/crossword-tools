@@ -14,8 +14,6 @@
 <script type="text/javascript">
 
 
-var MY_GLOBAL;
-
 /** Handling form submission **/
 function handleFileSelect(evt) {
     const files = evt.target.files; // FileList object
@@ -39,10 +37,10 @@ function handleFileSelect(evt) {
                     xw = xw_constructor.fromData(contents);
                     console.log(xw);
                     //xw.from(contents);
-                    jscrossword_to_pdf(xw);
+                    //jscrossword_to_pdf(xw);
                     //var jpz_str = xw.toJPZString();
                     //file_download(jpz_str, 'test.jpz', 'text/xml');
-                    MY_GLOBAL = xw;
+                    window.jsxw = xw;
                 };
             })(f);
             r.readAsBinaryString(f);
