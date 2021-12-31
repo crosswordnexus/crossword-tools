@@ -75,6 +75,8 @@ function xw_read_ipuz(data) {
                 solution = data['solution'][y][x];
                 if (solution.value) {
                     solution = solution.value;
+                } else if (solution.cell) {
+                    solution = solution.cell;
                 }
 
             } catch {}
