@@ -392,6 +392,16 @@ function xw_read_jpz(data1) {
         cells.push(new_cell);
     }
 
+    // Normalize cell order to row-major
+    cells.sort((cell_1, cell_2) => {
+      var y_diff = cell_1.y - cell_2.y;
+      if (y_diff != 0) {
+        return y_diff;
+      } else {
+        return cell_1.x - cell_2.x;
+      }
+    });
+
     /** WORDS **/
     var words = [];
     // helper function to get cell values from "x" and "y" strings
