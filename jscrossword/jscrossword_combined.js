@@ -37,7 +37,8 @@ function xw_read_ipuz(data) {
         'description': data.intro || '',
         'height': height,
         'width': width,
-        'crossword_type': crossword_type
+        'crossword_type': crossword_type,
+        'fakeclues': data.fakeclues
     };
 
     /*
