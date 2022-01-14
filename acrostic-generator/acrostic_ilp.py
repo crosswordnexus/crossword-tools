@@ -7,16 +7,19 @@ from collections import Counter
 import string
 import random
 import time
-import sys, getopt, os
+import argparse
+import os, sys
 
+# The default word list and score
 WORDLIST1 = r'xwordlist.dict'
 MIN_SCORE = 90
 
+# Words of length 3 are uninteresting
 MIN_WORD_LENGTH = 4
-MAX_WORD_LENGTH = 12
+MAX_WORD_LENGTH = 15
 
 ###################
-
+# Add the directory to the wordlist
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 WORDLIST = os.path.join(THIS_DIR, WORDLIST1)
 
@@ -287,42 +290,32 @@ def create_acrostic(quote, source, excluded_words=[]):
     return solution_array
 #END create_acrostic()
 
-def main(argv=None):
-    if argv is None:
-        argv = sys.argv
-
+def main():
     quote = ''
     source = ''
     excluded = []
     included = []
 
-    try:
-        try:
-            opts, args = getopt.getopt(argv[1:], "q:s:x:i:", ["quote=", "source=", "excluded=", "included="])
-        except getopt.error as msg:
-             raise msg
-        for o,a in opts:
-            if o in ('-q','--quote'):
-                # the quote you want to make an acrostic puzzle from
-                quote = a
-            elif o in ('-s','--source'):
-                # the "source", usually the author and title
-                source = a
-            elif o in ('-x', '--excluded'):
-                # a comma-separated list of words not to include
-                excluded=[_.strip().lower() for _ in a.split(',')]
-            elif o in ('-i', '--included'):
-                # a comma-separated list of words not to include
-                included=[_.strip().lower() for _ in a.split(',')]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-q', '--quote', type=str, help='The quote for the acrostic', required=True)
+    parser.add_argument('-s', '--source', type=str, help='The source of the quote (usually author + work)', required=True)
+    parser.add_argument('-x', '--excluded', type=str, help='A comma-separated list of words to exclude (default: empty)')
+    parser.add_argument('-i', '--included', type=str, help='A comma-separated list of words to include (default: empty)')
+    parser.add_argument('-w', '--wordlist', type=str, help='The word list to use (default: xwordlist.dict)')
+    parser.add_argument('-m', '--minscore', type=str, help='The minimum score of words to use in the word list')
 
-        # Execute the code
-        soln_array = create_acrostic2(quote, source, excluded_words=excluded, included_words=included)
-        for x in soln_array:
-            print(x.upper())
+    args = parser.parse_args()
 
-    except Exception as err:
-        raise err
-        return 2
+    # Turn the strings into arrays as needed
+    if args.excluded:
+        excluded=[_.strip().lower() for _ in args.excluded.split(',')]
+    if args.included:
+        included=[_.strip().lower() for _ in args.included.split(',')]
+
+    # Execute the code
+    soln_array = create_acrostic2(args.quote, args.source, excluded_words=excluded, included_words=included)
+    for x in soln_array:
+        print(x.upper())
 
 #%%
 if __name__ == "__main__":
