@@ -105,6 +105,11 @@ function xw_read_ipuz(data) {
             // background shape and color
             background_shape = style.shapebg;
             background_color = style.color;
+            // official iPuz style is RGB without a "#"
+            // we add that if it's missing
+            if (background_color && background_color.match('^[A-Fa-f0-9]{6}$')) {
+              background_color = '#' + background_color.toString();
+            }
             // top-right numbers
             var top_right_number = null;
             if (style.mark) {
