@@ -7,16 +7,21 @@ from collections import Counter
 import string
 import random
 import time
-import sys, getopt, os
+import argparse
+import os, sys
 
+# The default word list and score
 WORDLIST1 = r'xwordlist.dict'
 MIN_SCORE = 90
 
+# Words of length 3 are uninteresting
 MIN_WORD_LENGTH = 4
-MAX_WORD_LENGTH = 12
+
+# The "distance" around the mean length we look at
+LEN_DISTANCE = 4
 
 ###################
-
+# Add the directory to the wordlist
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 WORDLIST = os.path.join(THIS_DIR, WORDLIST1)
 
@@ -133,7 +138,7 @@ def create_kotwords_export(quote, source, solution_array):
 
     return ret
 
-def create_acrostic2(quote, source, excluded_words=[], included_words=[]):
+def create_acrostic2(quote, source, excluded_words=[], included_words=[], wordlist=WORDLIST, min_score=MIN_SCORE):
     """
     Parameters
     ----------
@@ -176,7 +181,8 @@ def create_acrostic2(quote, source, excluded_words=[], included_words=[]):
         source2 = alpha_only(source)
         quote2 = quote
     # Create the acrostic
-    soln_array1 = create_acrostic(quote2, source2, excluded_words=excluded_words)
+    soln_array1 = create_acrostic(quote2, source2, excluded_words=excluded_words
+                    , wordlist=wordlist, min_score=min_score)
     # Add in the missing words to this solution
     solution_words = soln_array1 + included_words
     soln_array = []
@@ -191,7 +197,7 @@ def create_acrostic2(quote, source, excluded_words=[], included_words=[]):
     return soln_array
 #END create_acrostic2()
 
-def create_acrostic(quote, source, excluded_words=[]):
+def create_acrostic(quote, source, excluded_words=[], wordlist=WORDLIST, min_score=MIN_SCORE):
     """
     Parameters
     ----------
@@ -228,17 +234,23 @@ def create_acrostic(quote, source, excluded_words=[]):
     # Set up the integer programming model
     m = mip.Model()
 
+    # Set up min and max lengths for the words we'll look at
+    mean_length = len(quote_alpha)/len(source_alpha)
+    min_length = mean_length - LEN_DISTANCE
+    max_length = mean_length + LEN_DISTANCE
+
     # Create our variables -- they're the words
     excluded_words_set = set([x.lower().strip() for x in excluded_words])
     logging.info('Setting up variables')
     words_var = []
     words = []
-    with open(WORDLIST, 'r') as fid:
+    with open(wordlist, 'r') as fid:
         for line in fid:
             line = line.strip().lower()
             word, score = line.split(';')
-            if int(score) >= MIN_SCORE and len(word) >= MIN_WORD_LENGTH \
-                and len(word) <= MAX_WORD_LENGTH \
+            if int(score) >= min_score and len(word) >= MIN_WORD_LENGTH \
+                and len(word) >= min_length \
+                and len(word) <= max_length \
                 and word[0] in source_letters and is_substring(word, quote_alpha) \
                 and word not in excluded_words_set:
                 # Create a variable from this word
@@ -287,42 +299,34 @@ def create_acrostic(quote, source, excluded_words=[]):
     return solution_array
 #END create_acrostic()
 
-def main(argv=None):
-    if argv is None:
-        argv = sys.argv
-
+def main():
     quote = ''
     source = ''
     excluded = []
     included = []
 
-    try:
-        try:
-            opts, args = getopt.getopt(argv[1:], "q:s:x:i:", ["quote=", "source=", "excluded=", "included="])
-        except getopt.error as msg:
-             raise msg
-        for o,a in opts:
-            if o in ('-q','--quote'):
-                # the quote you want to make an acrostic puzzle from
-                quote = a
-            elif o in ('-s','--source'):
-                # the "source", usually the author and title
-                source = a
-            elif o in ('-x', '--excluded'):
-                # a comma-separated list of words not to include
-                excluded=[_.strip().lower() for _ in a.split(',')]
-            elif o in ('-i', '--included'):
-                # a comma-separated list of words not to include
-                included=[_.strip().lower() for _ in a.split(',')]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-q', '--quote', type=str, help='The quote for the acrostic', required=True)
+    parser.add_argument('-s', '--source', type=str, help='The source of the quote (usually author + work)', required=True)
+    parser.add_argument('-x', '--excluded', type=str, help='A comma-separated list of words to exclude (default: empty)')
+    parser.add_argument('-i', '--included', type=str, help='A comma-separated list of words to include (default: empty)')
+    parser.add_argument('-w', '--wordlist', type=str, default=WORDLIST, help='The word list to use (default: xwordlist.dict)')
+    parser.add_argument('-m', '--minscore', type=int, default=MIN_SCORE, help='The minimum score of words to use in the word list')
 
-        # Execute the code
-        soln_array = create_acrostic2(quote, source, excluded_words=excluded, included_words=included)
-        for x in soln_array:
-            print(x.upper())
+    args = parser.parse_args()
 
-    except Exception as err:
-        raise err
-        return 2
+    # Turn the strings into arrays as needed
+    if args.excluded:
+        excluded=[_.strip().lower() for _ in args.excluded.split(',')]
+    if args.included:
+        included=[_.strip().lower() for _ in args.included.split(',')]
+
+    # Execute the code
+    soln_array = create_acrostic2(args.quote, args.source
+        , excluded_words=excluded, included_words=included
+        , wordlist=args.wordlist, min_score=args.minscore)
+    for x in soln_array:
+        print(x.upper())
 
 #%%
 if __name__ == "__main__":
