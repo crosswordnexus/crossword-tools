@@ -289,6 +289,12 @@ class JSCrossword {
         return xw_read_ipuz(data);
     }
 
+    /** CFP **/
+    // requires cfp_read_write.js
+    fromCFP(data) {
+        return xw_read_cfp(data);
+    }
+
     /* try to determine the puzzle type */
     fromData(data) {
         var js;
@@ -301,7 +307,12 @@ class JSCrossword {
                 js = xw_read_jpz(data);
             } catch (error2) {
                 console.log(error2);
-                js = xw_read_ipuz(data);
+                try {
+                  js = xw_read_ipuz(data);
+                } catch (error3) {
+                  console.log(error3);
+                  js = xw_read_cfp(data);
+                }
             }
         }
         js.set_check_reveal();
