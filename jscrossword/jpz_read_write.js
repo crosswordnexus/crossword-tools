@@ -72,8 +72,10 @@ function xw_read_jpz(data1) {
     var crossword, puzzle, jpz_metadata;
     puzzle = xmlDoc.getElementsByTagName('rectangular-puzzle');
     if (!puzzle.length) {
-        console.log(ERR_PARSE_JPZ);
-        return;
+        throw {
+          name: ERR_PARSE_JPZ,
+          message: 'Could not find puzzle data'
+        };
     }
 
     // determine the type of the crossword
@@ -91,8 +93,10 @@ function xw_read_jpz(data1) {
     // metadata
     jpz_metadata = puzzle[0].getElementsByTagName('metadata');
     if (!jpz_metadata.length) {
-        console.log('could not find metadata');
-        return;
+        throw {
+          name: ERR_PARSE_JPZ,
+          message: 'Could not find metadata'
+        };
     }
 
     var metadata = {'title': '', 'author': '', 'copyright': '', 'description': ''};
