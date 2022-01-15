@@ -85,7 +85,7 @@ function xw_read_cfp(xml) {
   cells.forEach(function(cell) {
     var thisNumber = gn[cell.y][cell.x];
     if (thisNumber) {
-      cell.number = thisNumber;
+      cell.number = thisNumber.toString();
     }
   });
 
@@ -104,7 +104,7 @@ function xw_read_cfp(xml) {
   var clues1 = {'ACROSS': [], 'DOWN': []};
   // clues and words are coupled in .cfp
   dataObj.WORDS.WORD.forEach( function(w) {
-      var word_id = w.id;
+      var word_id = Number(w.id);
       var number = w.num;
       var text = w['#text'];
       var thisDir = w.dir;
