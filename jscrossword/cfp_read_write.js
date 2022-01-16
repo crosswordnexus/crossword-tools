@@ -12,7 +12,7 @@ function xw_read_cfp(xml) {
   // Pull in the metadata
   var grid_str = dataObj.GRID['#text'].trim();
   var grid_arr = grid_str.split('\n');
-  var width = dataObj.GRID.width;
+  var width = Number(dataObj.GRID.width);
   var height = grid_arr.length
   var metadata = {
       'title': dataObj.TITLE['#text'] || '',
@@ -59,6 +59,7 @@ function xw_read_cfp(xml) {
           var type = null;
           if (solution === '.') {
               type = 'block';
+              solution = null;
           }
 
           // background shape and color
@@ -104,7 +105,7 @@ function xw_read_cfp(xml) {
   var clues1 = {'ACROSS': [], 'DOWN': []};
   // clues and words are coupled in .cfp
   dataObj.WORDS.WORD.forEach( function(w) {
-      var word_id = Number(w.id);
+      var word_id = Number(w.id) + 1000; // we don't want an ID of 0
       var number = w.num;
       var text = w['#text'];
       var thisDir = w.dir;
