@@ -763,6 +763,7 @@ function puzapp_to_puzpayload(puzdata) {
 
 /** Create a JSCrossword from a PUZAPP **/
 function jscrossword_from_puz(puzdata) {
+    console.log(puzdata);
     /* metadata */
     var metadata = {
       "title": puzdata.title.trim()
@@ -787,6 +788,12 @@ function jscrossword_from_puz(puzdata) {
             else {
                 cell['solution'] = this_letter;
             }
+            // already filled-in letters
+            var this_fill = puzdata.grid.charAt(ix);
+            if (this_fill !== '-' && this_fill !== '.') {
+              cell['letter'] = this_fill;
+            }
+
             if (puzdata.sqNbrs[ix]) {
                 cell['number'] = puzdata.sqNbrs[ix];
             }
