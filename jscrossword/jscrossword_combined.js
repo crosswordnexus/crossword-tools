@@ -40,7 +40,7 @@ function xw_read_cfp(xml) {
   }
   // Get rebus indicators if they exist
   var rebusObj = {};
-  if (dataObj.REBUSES.REBUS) {
+  if (dataObj.REBUSES) {
     dataObj.REBUSES.REBUS.forEach( function(r) {
       rebusObj[r.input] = r.letters.toUpperCase();
     });
