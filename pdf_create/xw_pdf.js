@@ -356,7 +356,7 @@ function jscrossword_to_pdf(xw, options={}) {
             options.num_columns = 3;
             options.num_full_columns = 0;
         }
-        else if (clue_length >= 2000) {
+        else if (clue_length >= 1600) {
             options.num_columns = 5;
             options.num_full_columns = 2;
         }
