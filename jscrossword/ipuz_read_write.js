@@ -67,9 +67,7 @@ function xw_read_ipuz(data) {
                 number = number.toString();
                 if (number === EMPTY) {number = null;}
             }
-            if (number === EMPTY || number === BLOCK || number === 0) {
-                number = null;
-            }
+
             // solution
             var solution = '';
             try {
@@ -83,7 +81,7 @@ function xw_read_ipuz(data) {
             } catch {}
             // type
             var type = null;
-            if (solution === BLOCK) {
+            if (solution === BLOCK || number === BLOCK) {
                 type = 'block';
             } else if (data['puzzle'][y][x] === null) {
                 type = 'void';
@@ -119,6 +117,11 @@ function xw_read_ipuz(data) {
                 // we just read them in as `number` or `top_right_number` for now
                 if (!number) {number = style.mark.BL;}
                 if (!top_right_number) {top_right_number = style.mark.BR;}
+            }
+
+            // Change the "number" if it isn't real
+            if (number === EMPTY || number === BLOCK) {
+                number = null;
             }
 
             var new_cell = {
