@@ -352,13 +352,13 @@ function jscrossword_to_pdf(xw, options={}) {
             options.num_columns = 4;
             options.num_full_columns = 1;
         }
-        else if (xw_height <= 11) {
-            options.num_columns = 3;
-            options.num_full_columns = 0;
-        }
         else if (clue_length >= 1600) {
             options.num_columns = 5;
             options.num_full_columns = 2;
+        }
+        else if (xw_height <= 11) {
+            options.num_columns = 3;
+            options.num_full_columns = 0;
         }
         else {
             options.num_columns = 3;
