@@ -641,7 +641,7 @@ function jscrossword_to_pdf(xw, options={}) {
         var notepad_options = {'align': 'center', 'lineHeightFactor': 1};
         notepad1 = xw.metadata.description; notepad2 = '';
         if (notepad1.length > MAX_NOTEPAD_LINE_LENGTH) {
-            var cutoff_index = puzdata.notes.indexOf(' ', notepad1.length/2);
+            var cutoff_index = xw.metadata.description.indexOf(' ', notepad1.length/2);
             notepad1 = xw.metadata.description.substr(0,cutoff_index);
             notepad2 = xw.metadata.description.substr(cutoff_index+1);
         }
