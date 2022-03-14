@@ -432,7 +432,7 @@ function jscrossword_to_pdf(xw, options={}) {
 
     // We change the notepad height for especially long notepads
     if (xw.metadata.description.length > MAX_NOTEPAD_LINE_LENGTH) {
-        notepad = {'max_pt': 20, 'max_lines': 2};
+        notepad = {'max_pt': 80, 'max_lines': 4};
     }
 
     if (!options.show_notepad) {
@@ -639,6 +639,11 @@ function jscrossword_to_pdf(xw, options={}) {
         //notepad_ypos = grid_ypos + grid_height + options.vertical_separator + (notepad.max_pt + notepad_pt)/2;
         notepad_ypos = grid_ypos + grid_height + options.vertical_separator + notepad_pt;
         var notepad_options = {'align': 'center', 'lineHeightFactor': 1};
+        notepad_lines.forEach(function(notepad1) {
+          doc.text(notepad_xpos, notepad_ypos, notepad1, null, null, 'center');
+          notepad_ypos += notepad_pt;
+        });
+        /*
         notepad1 = xw.metadata.description; notepad2 = '';
         if (notepad1.length > MAX_NOTEPAD_LINE_LENGTH) {
             var cutoff_index = xw.metadata.description.indexOf(' ', notepad1.length/2);
@@ -650,13 +655,15 @@ function jscrossword_to_pdf(xw, options={}) {
         if (notepad2) {
             doc.text(notepad_xpos, notepad_ypos + notepad_pt, notepad2, null, null, 'center');
         }
+        */
         doc.setFontType('normal');
 
         // Draw a rectangle around the notepad
         var notepad_rect_y = grid_ypos + grid_height + options.vertical_separator;
         var notepad_rect_x = grid_xpos;
         var notepad_rect_w = grid_width;
-        var notepad_adj = (notepad.max_lines == 2 ? 1.2 : 1.4);
+        //var notepad_adj = (notepad.max_lines == 2 ? 1.2 : 1.4);
+        var notepad_adj = 1.1;
         var notepad_rect_h = notepad_pt * notepad.max_lines * notepad_adj;
         var notepad_rect_radius = notepad_pt / 2.5;
         doc.roundedRect(notepad_rect_x, notepad_rect_y, notepad_rect_w, notepad_rect_h, notepad_rect_radius, notepad_rect_radius);
