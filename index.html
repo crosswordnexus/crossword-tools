@@ -11,7 +11,27 @@
 
 <input type="file" id="files" name="files" accept=".puz,.xml,.jpz,.xpz,.ipuz,.cfp" />
 
+<br /><br />
+<button title="Show/hide options (advanced)" type="button" onclick="show_hide('options_div')">Show/hide options (advanced)</button>
+<div id="options_div" style="display:none">
+  <textarea id="options_textarea" rows=20 cols=30>
+{
+   "num_columns":null,
+   "num_full_columns":null,
+   "gray":0.5,
+   "show_notepad":false
+}
+  </textarea>
+</div>
+
 <script type="text/javascript">
+function show_hide(elt) {
+  if(document.getElementById(elt).style.display=='none') {
+    document.getElementById(elt).style.display='';
+  } else {
+    document.getElementById(elt).style.display='none'
+  }
+}
 
 
 /** Handling form submission **/
@@ -29,6 +49,7 @@ function handleFileSelect(evt) {
             console.log(f);
             var filename = f.name.toLowerCase();
             const r = new FileReader();
+            options_obj = JSON.parse(document.getElementById('options_textarea').value);
             r.onload = (function (theFile) {
                 return function (e) {
                     let contents = e.target.result;
@@ -37,7 +58,7 @@ function handleFileSelect(evt) {
                     xw = xw_constructor.fromData(contents);
                     console.log(xw);
                     //xw.from(contents);
-                    jscrossword_to_pdf(xw);
+                    jscrossword_to_pdf(xw, options=options_obj);
                     //var jpz_str = xw.toJPZString();
                     //file_download(jpz_str, 'test.jpz', 'text/xml');
                     window.jsxw = xw;
