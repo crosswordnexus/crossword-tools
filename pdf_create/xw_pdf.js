@@ -307,6 +307,8 @@ function jscrossword_to_pdf(xw, options={}) {
     ,   vertical_separator : 10
     ,   show_notepad : false
     ,   line_width: 0.7
+    ,   notepad_max_pt: 12
+    ,   notepad_min_pt: 8
     };
 
     for (var key in DEFAULT_OPTIONS) {
@@ -316,6 +318,12 @@ function jscrossword_to_pdf(xw, options={}) {
             options[key] = DEFAULT_OPTIONS[key];
         }
     }
+
+    var PTS_PER_IN = 72;
+    var DOC_WIDTH = 8.5 * PTS_PER_IN;
+    var DOC_HEIGHT = 11 * PTS_PER_IN;
+
+    var margin = options.margin;
 
     var xw_height = xw.metadata.height;
     var xw_width = xw.metadata.width;
@@ -329,12 +337,19 @@ function jscrossword_to_pdf(xw, options={}) {
     // variables used in for loops
     var i, j;
 
+    // helper value for multiplying
+    var show_notepad_int = options.show_notepad ? 1 : 0;
+
+    // Reserve spot for the notepad
+    var notepad_ypos = DOC_HEIGHT - margin - options.copyright_pt - options.vertical_separator * 2;
+    var notepad_xpos;
+
     // If options.num_columns is null, we determine it ourselves
     if (options.num_columns === null || options.num_full_columns === null)
     {
         var word_count = xw.words.length;
         var clue_length = xw.clues.map(x=>x.clue).flat().map(x=>x.text).join('').length;
-        //console.log(clue_length);
+        console.log(clue_length);
         if (xw_height > 2 * xw_width) {
             options.num_columns = 5;
             options.num_full_columns = 3;
@@ -368,12 +383,6 @@ function jscrossword_to_pdf(xw, options={}) {
 
     // The maximum font size of title and author
     var max_title_author_pt = Math.max(options.title_pt,options.author_pt);
-
-    var PTS_PER_IN = 72;
-    var DOC_WIDTH = 8.5 * PTS_PER_IN;
-    var DOC_HEIGHT = 11 * PTS_PER_IN;
-
-    var margin = options.margin;
 
     var doc;
 
@@ -426,30 +435,12 @@ function jscrossword_to_pdf(xw, options={}) {
         }
     }
 
-    // Notepad space
-    var notepad = {'max_pt': 12, 'max_lines': 1};
-    var MAX_NOTEPAD_LINE_LENGTH = 0.23 * grid_width;
-
-    // We change the notepad height for especially long notepads
-    if (xw.metadata.description.length > MAX_NOTEPAD_LINE_LENGTH) {
-        notepad = {'max_pt': 80, 'max_lines': 4};
-    }
-
-    if (!options.show_notepad) {
-        notepad = {'max_pt': 0, 'max_lines': 0};
-    }
-
-    // helper value for multiplying
-    var show_notepad_int = options.show_notepad ? 1 : 0;
-
-    // Reserve spot for the notepad
-    var notepad_ypos = DOC_HEIGHT - margin - options.copyright_pt - options.vertical_separator * 2;
-    var notepad_xpos = DOC_WIDTH - margin - grid_width/2;
-
     // x and y position of grid
+    var notepad_height = 0;
     var grid_xpos = DOC_WIDTH - margin - grid_width;
-    var grid_ypos = notepad_ypos - show_notepad_int * (options.vertical_separator + notepad.max_pt) - grid_height;
+    var grid_ypos = notepad_ypos - show_notepad_int * (options.vertical_separator + notepad_height) - grid_height;
 
+    var notepad_xpos = DOC_WIDTH - margin - grid_width/2;
     // we change the x position of the grid if there are no full columns
     // specifically, we want to center it.
     if (options.num_full_columns == 0) {
@@ -461,6 +452,29 @@ function jscrossword_to_pdf(xw, options={}) {
     if (!xw.clues.length) {
         grid_ypos = (DOC_HEIGHT - grid_height)/2;
     }
+
+    // Determine how much space to set aside for the notepad
+    var notepad_height = 0;
+    if (options.show_notepad) {
+      var doc1 = new jsPDF('portrait','pt','letter');
+      const notepad_width = grid_width - 20;
+      doc1.setFontSize(options.notepad_min_pt);
+      var num_notepad_lines = doc1.splitTextToSize(xw.metadata.description, notepad_width).length;
+
+      doc1.setFontType('italic');
+      var notepad_pt = options.notepad_max_pt;
+      doc1.setFontSize(notepad_pt);
+      var notepad_lines = doc1.splitTextToSize(xw.metadata.description, notepad_width);
+      while (notepad_lines.length > num_notepad_lines) {
+        notepad_pt -= 0.2;
+        doc1.setFontSize(notepad_pt);
+        notepad_lines = doc1.splitTextToSize(xw.metadata.description, notepad_width);
+      }
+      var notepad_adj = (num_notepad_lines > 1 ? 1.1 : 1.2);
+      notepad_height = num_notepad_lines * notepad_pt * notepad_adj;
+      //console.log(notepad_pt);
+    }
+    grid_ypos -= notepad_height;
 
     // Loop through and write to PDF if we find a good fit
     // Find an appropriate font size
@@ -627,44 +641,21 @@ function jscrossword_to_pdf(xw, options={}) {
     /* Render notepad */
     if (options.show_notepad) {
         doc.setFontType('italic');
-        var notepad_pt = (notepad.max_pt - 2)/notepad.max_lines;
         doc.setFontSize(notepad_pt);
-        var notepad_lines = doc.splitTextToSize(xw.metadata.description,grid_width - 20);
-        while (notepad_lines.length > notepad.max_lines) {
-            notepad_pt -= 0.2;
-            doc.setFontSize(notepad_pt);
-            notepad_lines = doc.splitTextToSize(xw.metadata.description,grid_width - 20);
-        }
         // We can move notepad_ypos up a bit depending on notepad_pt
         //notepad_ypos = grid_ypos + grid_height + options.vertical_separator + (notepad.max_pt + notepad_pt)/2;
         notepad_ypos = grid_ypos + grid_height + options.vertical_separator + notepad_pt;
-        var notepad_options = {'align': 'center', 'lineHeightFactor': 1};
         notepad_lines.forEach(function(notepad1) {
           doc.text(notepad_xpos, notepad_ypos, notepad1, null, null, 'center');
           notepad_ypos += notepad_pt;
         });
-        /*
-        notepad1 = xw.metadata.description; notepad2 = '';
-        if (notepad1.length > MAX_NOTEPAD_LINE_LENGTH) {
-            var cutoff_index = xw.metadata.description.indexOf(' ', notepad1.length/2);
-            notepad1 = xw.metadata.description.substr(0,cutoff_index);
-            notepad2 = xw.metadata.description.substr(cutoff_index+1);
-        }
-
-        doc.text(notepad_xpos,notepad_ypos,notepad1,null,null,'center');
-        if (notepad2) {
-            doc.text(notepad_xpos, notepad_ypos + notepad_pt, notepad2, null, null, 'center');
-        }
-        */
         doc.setFontType('normal');
 
         // Draw a rectangle around the notepad
         var notepad_rect_y = grid_ypos + grid_height + options.vertical_separator;
         var notepad_rect_x = grid_xpos;
         var notepad_rect_w = grid_width;
-        //var notepad_adj = (notepad.max_lines == 2 ? 1.2 : 1.4);
-        var notepad_adj = 1.1;
-        var notepad_rect_h = notepad_pt * notepad.max_lines * notepad_adj;
+        var notepad_rect_h = notepad_height;
         var notepad_rect_radius = notepad_pt / 2.5;
         doc.roundedRect(notepad_rect_x, notepad_rect_y, notepad_rect_w, notepad_rect_h, notepad_rect_radius, notepad_rect_radius);
 
