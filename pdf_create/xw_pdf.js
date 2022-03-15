@@ -355,8 +355,8 @@ function jscrossword_to_pdf(xw, options={}) {
             options.num_full_columns = 3;
         }
         // handle puzzles with very few words
-        else if (word_count <= 30) {
-            options.num_columns = Math.ceil(word_count/10);
+        else if (clue_length <= 1000) {
+            options.num_columns = Math.ceil(clue_length/400);
             options.num_full_columns = 0;
         }
         else if (xw_height >= 17) {
@@ -370,10 +370,6 @@ function jscrossword_to_pdf(xw, options={}) {
         else if (clue_length >= 1600) {
             options.num_columns = 5;
             options.num_full_columns = 2;
-        }
-        else if (xw_height <= 11) {
-            options.num_columns = 3;
-            options.num_full_columns = 0;
         }
         else {
             options.num_columns = 3;
