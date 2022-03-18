@@ -493,7 +493,9 @@ function jscrossword_to_pdf(xw, options={}) {
         doc.setLineWidth(options.line_width);
 
         // Print the clues
-        var num_margin = doc.getTextWidth('99');
+        // We set the margin to be the maximum length of the clue numbers
+        var max_clue_num_length = xw.clues.map(x=>x.clue).flat().map(x=>x.number).map(x => x.length).reduce((a, b) => Math.max(a, b));
+        var num_margin = doc.getTextWidth('9'.repeat(max_clue_num_length));
         var num_xpos = margin + num_margin;
         var line_margin = 1.5 * doc.getTextWidth(' ');
         var line_xpos = num_xpos + line_margin;
