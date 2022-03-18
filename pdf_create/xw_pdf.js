@@ -309,6 +309,7 @@ function jscrossword_to_pdf(xw, options={}) {
     ,   line_width: 0.7
     ,   notepad_max_pt: 12
     ,   notepad_min_pt: 8
+    ,   orientation: 'portrait'
     };
 
     for (var key in DEFAULT_OPTIONS) {
@@ -319,9 +320,16 @@ function jscrossword_to_pdf(xw, options={}) {
         }
     }
 
+    console.log(options);
+
     var PTS_PER_IN = 72;
     var DOC_WIDTH = 8.5 * PTS_PER_IN;
     var DOC_HEIGHT = 11 * PTS_PER_IN;
+    if (options.orientation == 'landscape') {
+      DOC_WIDTH = 11 * PTS_PER_IN;
+      DOC_HEIGHT = 8.5 * PTS_PER_IN;
+    } else {options.orientation = 'portrait';}
+
 
     var margin = options.margin;
 
@@ -349,7 +357,7 @@ function jscrossword_to_pdf(xw, options={}) {
     {
         var word_count = xw.words.length;
         var clue_length = xw.clues.map(x=>x.clue).flat().map(x=>x.text).join('').length;
-        console.log(clue_length);
+        //console.log(clue_length);
         if (xw_height > 2 * xw_width) {
             options.num_columns = 5;
             options.num_full_columns = 3;
@@ -452,7 +460,7 @@ function jscrossword_to_pdf(xw, options={}) {
     // Determine how much space to set aside for the notepad
     var notepad_height = 0;
     if (options.show_notepad) {
-      var doc1 = new jsPDF('portrait','pt','letter');
+      var doc1 = new jsPDF(options.orientation, 'pt', 'letter');
       const notepad_width = grid_width - 20;
       doc1.setFontSize(options.notepad_min_pt);
       var num_notepad_lines = doc1.splitTextToSize(xw.metadata.description, notepad_width).length;
@@ -478,7 +486,7 @@ function jscrossword_to_pdf(xw, options={}) {
     var finding_font = true;
     while (finding_font)
     {
-        doc = new jsPDF('portrait','pt','letter');
+        doc = new jsPDF(options.orientation, 'pt', 'letter');
         var clue_padding = clue_pt / 3;
         doc.setFontSize(clue_pt);
 
