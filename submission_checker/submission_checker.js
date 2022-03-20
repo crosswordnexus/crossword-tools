@@ -36,7 +36,8 @@ function clueCharacterCount(xw) {
     var ct = 0;
     xw.clues.forEach(function(clueList) {
         clueList.clue.forEach(function (c) {
-            ct += c.text.length;
+            var clue_text = c.text || '';
+            ct += clue_text.length;
         });
     });
     return ct;
@@ -54,7 +55,7 @@ function xwDupes(xw) {
     xw.clues.forEach(function(clueList) {
         var thisCluesDirection = clueList.title;
         clueList.clue.forEach(function (c) {
-            var clue = c.text;
+            var clue = c.text || '';
             var num = c.number;
             // Loop through words in "clue"
             var words = clue.split(/[ -]/);
