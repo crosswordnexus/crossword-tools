@@ -1135,6 +1135,7 @@ var ActiveXObject, parsedPuz, filecontents, PUZAPP = {};
         //      padding (for now), sqNbrs, strings, canv, minPixmult
         //      version, nbrClues, acrossClues, downClues, leftContainer, rightContainer
         //      acrossSqNbrs, downSqNbrs
+        //      NEW: also now GRBS and RTBL
         // mutable fields: cursorX, cursorY, grid, pixmult, direction, revealSolution,
         //      highlightWordNbr, showingHelp,
         //      direction, highlightWordExtent, highlightClueId, lastClickX, lastClickY
@@ -1278,9 +1279,9 @@ var ActiveXObject, parsedPuz, filecontents, PUZAPP = {};
         retval.grid = string_convert(bytes.substring(grid_offset, grid_offset + wh));
         // Replace "solution" with "grid" if the puzzle is filled
         if (retval.grid.indexOf('-') == -1)
-		{
-			retval.solution = retval.grid;
-		}
+        {
+            retval.solution = retval.grid;
+        }
         cksum = cksum_region(bytes, grid_offset, wh, cksum);
         var acrossWords = {}, downWords = {};
         for (y = 0; y < h; y++) {
@@ -1329,6 +1330,12 @@ var ActiveXObject, parsedPuz, filecontents, PUZAPP = {};
             */
             if (sectName === "GEXT") {
                 retval.gext = bytes.substring(offset + 8, offset + 8 + len);
+            }
+            if (sectName === "GRBS") {
+                retval.grbs = bytes.substring(offset + 8, offset + 8 + len);
+            }
+            if (sectName === "RTBL") {
+                retval.rtbl = bytes.substring(offset + 8, offset + 8 + len);
             }
             offset += len + 9;
             //console.log("Extra section " + sectName);
@@ -1820,6 +1827,19 @@ function jscrossword_from_puz(puzdata) {
     , "width": puzdata.width
     , "crossword_type": "crossword"
     }
+
+    /* Rebus table (if needed) */
+    var rebus_table = {};
+    if (puzdata.rtbl) {
+      var rtbl_arr = puzdata.rtbl.split(';')
+      rtbl_arr.forEach(function (x) {
+        if (x.includes(':')) {
+          var thisArr = x.split(':');
+          rebus_table[Number(thisArr[0])] = thisArr[1];
+        }
+      });
+    }
+
     /* cells */
     var cells = [];
     var i, j;
@@ -1843,10 +1863,15 @@ function jscrossword_from_puz(puzdata) {
             if (puzdata.sqNbrs[ix]) {
                 cell['number'] = puzdata.sqNbrs[ix];
             }
+            // circles
             if (puzdata.gext) {
                 if (puzdata.gext[ix] != "\u0000") {
                   cell['background-shape'] = 'circle';
                 }
+            }
+            // rebus
+            if (puzdata.grbs) {
+                cell['solution'] = rebus_table[puzdata.grbs[ix].charCodeAt(0) - 1] || this_letter;
             }
             cells.push(cell);
         }
