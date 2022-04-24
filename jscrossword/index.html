@@ -38,9 +38,9 @@ function handleFileSelect(evt) {
                     //xw = xw_constructor.fromIpuz(contents);
                     console.log(xw);
                     //xw.from(contents);
-                    jscrossword_to_pdf(xw);
-                    //var jpz_str = xw.toJPZString();
-                    //file_download(jpz_str, 'test.jpz', 'text/xml');
+                    //jscrossword_to_pdf(xw);
+                    var jpz_str = xw.toJPZString();
+                    file_download(jpz_str, 'test.jpz', 'text/xml');
                     MY_GLOBAL = xw;
                 };
             })(f);
