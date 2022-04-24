@@ -295,7 +295,10 @@ function xw_write_jpz(metadata, cells, words, clues) {
             if (my_key == 'x' || my_key == 'y') {
                 my_val = Number(my_val) + 1;
             }
-            clue_attrs += `${my_key}="${my_val}" `;
+            // AFAIK if this value is "null" or "false" it does not hurt to exclude it
+            if (my_val) {
+              clue_attrs += `${my_key}="${my_val}" `;
+            }
         }
         jpz_string += `        <cell ${clue_attrs} />\n`;
     }
