@@ -292,9 +292,8 @@ function draw_crossword_grid(doc, xw, options)
 function jscrossword_to_pdf(xw, options={}) {
     var DEFAULT_OPTIONS = {
         margin: 40
-    ,   title_pt: 12
-    ,   author_pt: 12
-    ,   copyright_pt: 12
+    ,   title_pt: null
+    ,   copyright_pt: null
     ,   num_columns : null
     ,   num_full_columns: null
     ,   column_padding: 10
@@ -310,6 +309,7 @@ function jscrossword_to_pdf(xw, options={}) {
     ,   notepad_max_pt: 12
     ,   notepad_min_pt: 8
     ,   orientation: 'portrait'
+    ,   header1: '', header2: '', header3: ''
     };
 
     for (var key in DEFAULT_OPTIONS) {
@@ -319,6 +319,11 @@ function jscrossword_to_pdf(xw, options={}) {
             options[key] = DEFAULT_OPTIONS[key];
         }
     }
+
+    // Sorry big titles but we need a max size here
+    const MAX_TITLE_PT = 12;
+    if (options.title_pt > MAX_TITLE_PT) {options.title_pt = MAX_TITLE_PT;}
+    if (options.copyright_pt > MAX_TITLE_PT) {options.copyright_pt = MAX_TITLE_PT;}
 
     console.log(options);
 
@@ -349,7 +354,7 @@ function jscrossword_to_pdf(xw, options={}) {
     var show_notepad_int = options.show_notepad ? 1 : 0;
 
     // Reserve spot for the notepad
-    var notepad_ypos = DOC_HEIGHT - margin - options.copyright_pt - options.vertical_separator * 2;
+    var notepad_ypos = DOC_HEIGHT - margin - MAX_TITLE_PT - options.vertical_separator * 2;
     var notepad_xpos;
 
     // If options.num_columns is null, we determine it ourselves
@@ -386,7 +391,7 @@ function jscrossword_to_pdf(xw, options={}) {
     }
 
     // The maximum font size of title and author
-    var max_title_author_pt = Math.max(options.title_pt,options.author_pt);
+    var max_title_author_pt = MAX_TITLE_PT;
 
     var doc;
 
@@ -480,6 +485,12 @@ function jscrossword_to_pdf(xw, options={}) {
     }
     grid_ypos -= notepad_height;
 
+    // If there is no header 1 / header 2 we can save some space
+    var has_top_header_row = 1;
+    if (!options.header1 && !options.header2) {
+      has_top_header_row = 0;
+    }
+
     // Loop through and write to PDF if we find a good fit
     // Find an appropriate font size
     // don't do this if there are no clues
@@ -503,7 +514,8 @@ function jscrossword_to_pdf(xw, options={}) {
           var line_margin = 1.5 * doc.getTextWidth(' ');
           var line_xpos = num_xpos + line_margin;
           var top_line_ypos = margin + // top margin
-                      max_title_author_pt + // title
+                      has_top_header_row * (max_title_author_pt + options.vertical_separator) + // headers 1 & 2
+                      max_title_author_pt + // title + header 3
                       options.vertical_separator * 2 + // padding
                       clue_pt + clue_padding; // first clue
           var line_ypos = top_line_ypos;
@@ -518,7 +530,7 @@ function jscrossword_to_pdf(xw, options={}) {
                   // check to see if we need to wrap
                   var max_line_ypos;
                   if (my_column < options.num_full_columns) {
-                      max_line_ypos = DOC_HEIGHT - margin - options.copyright_pt - 2 * options.vertical_separator;
+                      max_line_ypos = DOC_HEIGHT - margin - MAX_TITLE_PT - 2 * options.vertical_separator;
                   } else {
                       max_line_ypos = grid_ypos - options.grid_padding;
                   }
@@ -587,40 +599,71 @@ function jscrossword_to_pdf(xw, options={}) {
 
     /***********************/
 
-    // If title_pt or author_pt are null, we determine them
-    var DEFAULT_TITLE_PT = 12;
+    // If title_pt is null, we determine it
+    var DEFAULT_TITLE_PT = MAX_TITLE_PT;
     var total_width = DOC_WIDTH - 2 * margin;
-    if (!options.author_pt) options.author_pt = options.title_pt;
     if (!options.title_pt) {
         options.title_pt = DEFAULT_TITLE_PT;
         var finding_title_pt = true;
         while (finding_title_pt)
         {
-            var title_author = xw.metadata.title;
-            doc.setFontSize(options.title_pt)
-                .setFontType('bold');
-            var lines = doc.splitTextToSize(title_author,DOC_WIDTH);
-            if (lines.length == 1) {
+            var header1_header2 = options.header1 + 'ABCDEFGH' + options.header2;
+            var title_header3 = xw.metadata.title + 'ABCDEFGH' + options.header3;
+            doc.setFontSize(options.title_pt).setFontType('bold');
+            var lines1 = doc.splitTextToSize(header1_header2,DOC_WIDTH);
+            var lines2 = doc.splitTextToSize(title_header3,DOC_WIDTH);
+            if (lines1.length == 1 && lines2.length == 1) {
                 finding_title_pt = false;
             }
             else {
                 options.title_pt -= 1;
             }
         }
-        options.author_pt = options.title_pt;
+    }
+    // same for copyright
+    if (!options.copyright_pt) {
+        options.copyright_pt = DEFAULT_TITLE_PT;
+        var finding_title_pt = true;
+        while (finding_title_pt)
+        {
+            var author_copyright = xw.metadata.author + 'ABCDEFGH' + xw.metadata.copyright;
+            doc.setFontSize(options.copyright_pt).setFontType('normal');
+            var lines1 = doc.splitTextToSize(author_copyright,DOC_WIDTH);
+            if (lines1.length == 1) {
+                finding_title_pt = false;
+            }
+            else {
+                options.title_pt -= 1;
+            }
+        }
     }
 
 
 
-    /* Render title and author */
+    /* Render headers and footers */
 
     var title_xpos = margin;
     var author_xpos = DOC_WIDTH - margin;
     var title_author_ypos = margin + max_title_author_pt;
+    var right_xpos = DOC_WIDTH - margin;
+
+    if (options.header1 || options.header2) {
+      doc.setFontSize(options.title_pt);
+      doc.setFontType('bold');
+      doc.text(title_xpos, title_author_ypos, options.header1);
+      doc.text(right_xpos, title_author_ypos, options.header2, null, null, 'right');
+      title_author_ypos += max_title_author_pt + options.vertical_separator;
+      console.log(max_title_author_pt);
+      console.log(options.vertical_separator);
+    }
+
     //title
     doc.setFontSize(options.title_pt);
     doc.setFontType('bold');
-    doc.text(title_xpos,title_author_ypos,xw.metadata.title);
+    doc.text(title_xpos, title_author_ypos, xw.metadata.title);
+    if (options.header3) {
+      doc.text(right_xpos, title_author_ypos, options.header3, null, null, 'right');
+    }
 
     // Draw a line under the headers
     var line_x1 = margin;
