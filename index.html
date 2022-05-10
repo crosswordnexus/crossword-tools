@@ -58,11 +58,11 @@ function handleFileSelect(evt) {
                     var xw;
                     xw = xw_constructor.fromData(contents);
                     console.log(xw);
+                    window.jsxw = xw;
                     //xw.from(contents);
                     jscrossword_to_pdf(xw, options=options_obj);
                     //var jpz_str = xw.toJPZString();
                     //file_download(jpz_str, 'test.jpz', 'text/xml');
-                    window.jsxw = xw;
                 };
             })(f);
             r.readAsBinaryString(f);

@@ -482,103 +482,107 @@ function jscrossword_to_pdf(xw, options={}) {
 
     // Loop through and write to PDF if we find a good fit
     // Find an appropriate font size
-    var clue_pt = options.max_clue_pt;
-    var finding_font = true;
-    while (finding_font)
-    {
-        doc = new jsPDF(options.orientation, 'pt', 'letter');
-        var clue_padding = clue_pt / 3;
-        doc.setFontSize(clue_pt);
+    // don't do this if there are no clues
+    doc = new jsPDF(options.orientation, 'pt', 'letter');
+    if (xw.clues.length) {
+      var clue_pt = options.max_clue_pt;
+      var finding_font = true;
+      while (finding_font)
+      {
+          doc = new jsPDF(options.orientation, 'pt', 'letter');
+          var clue_padding = clue_pt / 3;
+          doc.setFontSize(clue_pt);
 
-        doc.setLineWidth(options.line_width);
+          doc.setLineWidth(options.line_width);
 
-        // Print the clues
-        // We set the margin to be the maximum length of the clue numbers
-        var max_clue_num_length = xw.clues.map(x=>x.clue).flat().map(x=>x.number).map(x => x.length).reduce((a, b) => Math.max(a, b));
-        var num_margin = doc.getTextWidth('9'.repeat(max_clue_num_length));
-        var num_xpos = margin + num_margin;
-        var line_margin = 1.5 * doc.getTextWidth(' ');
-        var line_xpos = num_xpos + line_margin;
-        var top_line_ypos = margin + // top margin
-                    max_title_author_pt + // title
-                    options.vertical_separator * 2 + // padding
-                    clue_pt + clue_padding; // first clue
-        var line_ypos = top_line_ypos;
-        var my_column = 0;
-        for (var k=0; k<clue_arrays.length; k++) {
-            var clues = clue_arrays[k];
-            var nums = num_arrays[k];
-            for (var i=0; i<clues.length; i++) {
-                var clue = clues[i];
-                var num = nums[i];
+          // Print the clues
+          // We set the margin to be the maximum length of the clue numbers
+          var max_clue_num_length = xw.clues.map(x=>x.clue).flat().map(x=>x.number).map(x => x.length).reduce((a, b) => Math.max(a, b));
+          var num_margin = doc.getTextWidth('9'.repeat(max_clue_num_length));
+          var num_xpos = margin + num_margin;
+          var line_margin = 1.5 * doc.getTextWidth(' ');
+          var line_xpos = num_xpos + line_margin;
+          var top_line_ypos = margin + // top margin
+                      max_title_author_pt + // title
+                      options.vertical_separator * 2 + // padding
+                      clue_pt + clue_padding; // first clue
+          var line_ypos = top_line_ypos;
+          var my_column = 0;
+          for (var k=0; k<clue_arrays.length; k++) {
+              var clues = clue_arrays[k];
+              var nums = num_arrays[k];
+              for (var i=0; i<clues.length; i++) {
+                  var clue = clues[i];
+                  var num = nums[i];
 
-                // check to see if we need to wrap
-                var max_line_ypos;
-                if (my_column < options.num_full_columns) {
-                    max_line_ypos = DOC_HEIGHT - margin - options.copyright_pt - 2 * options.vertical_separator;
-                } else {
-                    max_line_ypos = grid_ypos - options.grid_padding;
-                }
+                  // check to see if we need to wrap
+                  var max_line_ypos;
+                  if (my_column < options.num_full_columns) {
+                      max_line_ypos = DOC_HEIGHT - margin - options.copyright_pt - 2 * options.vertical_separator;
+                  } else {
+                      max_line_ypos = grid_ypos - options.grid_padding;
+                  }
 
-                // Split our clue
-                var lines = split_text_to_size_bi(clue, col_width - (num_margin + line_margin), doc);
+                  // Split our clue
+                  var lines = split_text_to_size_bi(clue, col_width - (num_margin + line_margin), doc);
 
-                if (line_ypos + (lines.length - 1) * (clue_pt + clue_padding) > max_line_ypos) {
-                    // move to new column
-                    my_column += 1;
-                    num_xpos = margin + num_margin + my_column * (col_width + options.column_padding);
-                    line_xpos = num_xpos + line_margin;
-                    line_ypos = top_line_ypos;
-                    // if we're at the top of a line we don't print a blank clue
-                    if (clue == '') {
-                        continue;
-                    }
-                }
+                  if (line_ypos + (lines.length - 1) * (clue_pt + clue_padding) > max_line_ypos) {
+                      // move to new column
+                      my_column += 1;
+                      num_xpos = margin + num_margin + my_column * (col_width + options.column_padding);
+                      line_xpos = num_xpos + line_margin;
+                      line_ypos = top_line_ypos;
+                      // if we're at the top of a line we don't print a blank clue
+                      if (clue == '') {
+                          continue;
+                      }
+                  }
 
-                for (var j=0; j<lines.length; j++)
-                {
-                    var line = lines[j];
-                    // Set the font to bold for the title
-                    if (i==0 && j==0) {
-                        doc.setFontType('bold');
-                        printCharacters(doc, line, line_ypos, line_xpos, clue_pt);
-                        // add a little space after the header
-                        line_ypos += clue_padding;
-                    } else {
-                        if (j == 0 || (i==0 && j==1)) {
-                          // When j == 0 we print the number
+                  for (var j=0; j<lines.length; j++)
+                  {
+                      var line = lines[j];
+                      // Set the font to bold for the title
+                      if (i==0 && j==0) {
                           doc.setFontType('bold');
-                          doc.text(num_xpos, line_ypos, num, null, null, "right");
+                          printCharacters(doc, line, line_ypos, line_xpos, clue_pt);
+                          // add a little space after the header
+                          line_ypos += clue_padding;
+                      } else {
+                          if (j == 0 || (i==0 && j==1)) {
+                            // When j == 0 we print the number
+                            doc.setFontType('bold');
+                            doc.text(num_xpos, line_ypos, num, null, null, "right");
+                            doc.setFontType('normal');
+                          }
+                          // Print the clue
                           doc.setFontType('normal');
-                        }
-                        // Print the clue
-                        doc.setFontType('normal');
-                        // print the text
-                        //doc.text(line_xpos,line_ypos,line);
-                        printCharacters(doc, line, line_ypos, line_xpos, clue_pt);
-                    }
-                    // set the y position for the next line
-                    line_ypos += clue_pt + clue_padding;
-                }
-                // Add a little extra space in between clues
-                line_ypos += clue_padding;
-            }
-        }
+                          // print the text
+                          //doc.text(line_xpos,line_ypos,line);
+                          printCharacters(doc, line, line_ypos, line_xpos, clue_pt);
+                      }
+                      // set the y position for the next line
+                      line_ypos += clue_pt + clue_padding;
+                  }
+                  // Add a little extra space in between clues
+                  line_ypos += clue_padding;
+              }
+          }
 
-        // let's not let the font get ridiculously tiny
-        if (clue_pt == options.min_clue_pt)
-        {
-            finding_font = false;
-        }
-        else if (my_column > options.num_columns - 1)
-        {
-            clue_pt -= 0.1;
-        }
-        else
-        {
-            finding_font = false;
-        }
-    }
+          // let's not let the font get ridiculously tiny
+          if (clue_pt == options.min_clue_pt)
+          {
+              finding_font = false;
+          }
+          else if (my_column > options.num_columns - 1)
+          {
+              clue_pt -= 0.1;
+          }
+          else
+          {
+              finding_font = false;
+          }
+      }
+    } // END if clues
 
 
     /***********************/
