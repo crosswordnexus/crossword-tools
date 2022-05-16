@@ -135,7 +135,7 @@ function draw_crossword_grid(doc, xw, options)
     ,   x0: 20
     ,   y0: 20
     ,   cell_size: 24
-    ,   gray : 0.4
+    ,   gray : null
     ,   line_width: 0.7
     ,   bar_width: 2
     };
@@ -152,8 +152,9 @@ function draw_crossword_grid(doc, xw, options)
     var cell_size = options.cell_size;
 
     /** Function to draw a square **/
-    function draw_square(doc,x1,y1,cell_size,number,letter,filled,cell) {
+    function draw_square(doc,x1,y1,cell_size,number,letter,filled,cell, barsOnly=false) {
 
+      if (!barsOnly) {
         // thank you https://stackoverflow.com/a/5624139
         function hexToRgb(hex) {
             hex = hex || '#FFFFFF';
@@ -226,40 +227,41 @@ function draw_crossword_grid(doc, xw, options)
         if (cell['background-shape']) {
             doc.circle(x1+cell_size/2,y1+cell_size/2,cell_size/2);
         }
-        // bars
-        cell.bar = {
-          top: cell['top-bar']
-        , left: cell['left-bar']
-        , right: cell['right-bar']
-        , bottom: cell['bottom-bar']
-        };
-        if (cell.bar) {
-            var bar = cell.bar;
-            var bar_start = {
-                top: [x1, y1],
-                left: [x1, y1],
-                right: [x1 + cell_size, y1 + cell_size],
-                bottom: [x1 + cell_size, y1 + cell_size]
-            };
-            var bar_end = {
-                top: [x1 + cell_size, y1],
-                left: [x1, y1 + cell_size],
-                right: [x1 + cell_size, y1],
-                bottom: [x1, y1 + cell_size]
-            };
-            for (var key in bar) {
-                if (bar.hasOwnProperty(key)) {
-                    if (bar[key]) {
-                        //console.log(options.bar_width);
-                        doc.setLineWidth(options.bar_width);
-                        doc.line(bar_start[key][0], bar_start[key][1], bar_end[key][0], bar_end[key][1]);
-                        doc.setLineWidth(options.line_width);
-                    }
-                }
-            }
-        }
-        // Reset the text color, if necessary
-        doc.setTextColor(0, 0, 0);
+      }
+      // bars
+      cell.bar = {
+        top: cell['top-bar']
+      , left: cell['left-bar']
+      , right: cell['right-bar']
+      , bottom: cell['bottom-bar']
+      };
+      if (cell.bar) {
+          var bar = cell.bar;
+          var bar_start = {
+              top: [x1, y1],
+              left: [x1, y1],
+              right: [x1 + cell_size, y1 + cell_size],
+              bottom: [x1 + cell_size, y1 + cell_size]
+          };
+          var bar_end = {
+              top: [x1 + cell_size, y1],
+              left: [x1, y1 + cell_size],
+              right: [x1 + cell_size, y1],
+              bottom: [x1, y1 + cell_size]
+          };
+          for (var key in bar) {
+              if (bar.hasOwnProperty(key)) {
+                  if (bar[key]) {
+                      //console.log(options.bar_width);
+                      doc.setLineWidth(options.bar_width);
+                      doc.line(bar_start[key][0], bar_start[key][1], bar_end[key][0], bar_end[key][1]);
+                      doc.setLineWidth(options.line_width);
+                  }
+              }
+          }
+      }
+      // Reset the text color, if necessary
+      doc.setTextColor(0, 0, 0);
     }
 
     var width = xw.metadata.width;
@@ -285,6 +287,14 @@ function draw_crossword_grid(doc, xw, options)
         // or a block with a white background
         draw_square(doc,x_pos,y_pos,cell_size,number,letter,filled,c);
     });
+
+    // Draw just the bars afterward
+    // This is necessary because we may have overwritten bars earlier
+    xw.cells.forEach(function(c) {
+        var x_pos = options.x0 + c.x * cell_size;
+        var y_pos = options.y0 + c.y * cell_size;
+        draw_square(doc, x_pos ,y_pos, cell_size, '', '', false, c, true);
+    });
 }
 
 /** Create a PDF (requires jsPDF) **/
@@ -297,7 +307,7 @@ function jscrossword_to_pdf(xw, options={}) {
     ,   num_columns : null
     ,   num_full_columns: null
     ,   column_padding: 10
-    ,   gray: 0.5
+    ,   gray: null
     ,   under_title_spacing : 20
     ,   max_clue_pt : 14
     ,   min_clue_pt : 5
@@ -356,6 +366,18 @@ function jscrossword_to_pdf(xw, options={}) {
     // Reserve spot for the notepad
     var notepad_ypos = DOC_HEIGHT - margin - MAX_TITLE_PT - options.vertical_separator * 2;
     var notepad_xpos;
+
+    // If options.gray is NULL, we determine it
+    if (options.gray === null) {
+      options.gray = 0.5; // default
+      // If there are very few black squares, we can make darker
+      var num_black_squares = xw.cells.map(x=>x.type).reduce(function(accum, cur) {return accum + (cur==='block' ? 1 : 0);}, 0);
+      if (num_black_squares/(xw_height * xw_width) < 0.05) {
+        options.gray = 0.1;
+      }
+    }
+
+    console.log(options.gray);
 
     // If options.num_columns is null, we determine it ourselves
     if (options.num_columns === null || options.num_full_columns === null)
@@ -744,7 +766,7 @@ function jscrossword_to_nyt(xw, options={})
     ,   entry_left_padding: 150
     ,   clue_entry_pt : 10
     ,   outfile: null
-    ,   gray: 0.6
+    ,   gray: 0.4
     };
 
     for (var key in DEFAULT_OPTIONS) {
