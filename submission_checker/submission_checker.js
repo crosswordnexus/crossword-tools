@@ -44,7 +44,7 @@ function clueCharacterCount(xw) {
 }
 
 /* check for dupes */
-function xwDupes(xw) {
+function xwDupes(xw, minDupeLength=4) {
     var dupes = [];
     // get the entries in the grid
     var entry_map = xw.get_entry_mapping();
@@ -63,8 +63,8 @@ function xwDupes(xw) {
                 word = word.toUpperCase();
                 // Keep only alpha characters
                 word = word.replace(/[^A-Za-z]+/g, "");
-                // Only do this for words of length 4 or more
-                if (word.length >= 4) {
+                // Only do this for words of length minDupeLength or more
+                if (word.length >= minDupeLength) {
                     entries.forEach(function (entry) {
                         if (entry.match(word)) {
                             dupes.push({'entry': entry, 'clue': clue, 'clueDirection': thisCluesDirection, 'clueNumber': num});
@@ -77,7 +77,7 @@ function xwDupes(xw) {
     return dupes;
 }
 
-function submissionChecker(xw) {
+function submissionChecker(xw, minDupeLength=4) {
     var check_results = [];
     // black squares: 1/6 of the total squares
     var blackSquareMax = Math.ceil(xw.cells.length / 6);
@@ -96,13 +96,13 @@ function submissionChecker(xw) {
     var clueChars = clueCharacterCount(xw);
     check_results.push({'name': 'Clue characters', 'value': clueChars, 'max_value': maxClueCharacterCount, 'is_ok': (clueChars <= maxClueCharacterCount)});
     // Dupes
-    var dupes = xwDupes(xw);
+    var dupes = xwDupes(xw, minDupeLength);
     check_results.push({'name': 'Dupes', 'value': dupes, 'max_value': null, 'is_ok': (dupes.length == 0)});
     return check_results;
 }
 
-function submission_check_html(xw) {
-    var check_results = submissionChecker(xw);
+function submission_check_html(xw, minDupeLength=4) {
+    var check_results = submissionChecker(xw, minDupeLength);
     //console.log(check_results);
     html = '';
     check_results.forEach(function (x) {
