@@ -288,12 +288,12 @@ function xw_read_ipuz(data) {
     var titles = Object.keys(data['clues']);
     // Change the order if it's down first (CrossFire export bug)
     if (titles[0].toLowerCase() == 'down' && titles[1].toLowerCase() == 'across') {
-      titles = [titles[1], titles[0]];
+        titles = [titles[1], titles[0]];
     }
     titles.forEach( function(title) {
         var thisClues = [];
         data['clues'][title].forEach( function (clue) {
-            var number, text;
+            var number, text, refs;
             // a "clue" can be an array or an object
             if (Array.isArray(clue)) {
                 number = clue[0].toString();
@@ -301,8 +301,11 @@ function xw_read_ipuz(data) {
             } else {
                 number = clue.number.toString();
                 text = clue.clue;
+                dict_references = clue.references;
+                dict_continued = clue.continued;
+                refs = Object.assign({}, dict_references, dict_continued); // treat these as the same
             }
-            thisClues.push({'word': word_id, 'number': number, 'text': text});
+            thisClues.push({'word': word_id, 'number': number, 'text': text, 'refs': refs});
             // Cells are coupled with clues in iPuz
             if (clue.cells) {
                 var thisCells = [];
@@ -327,12 +330,12 @@ function xw_read_ipuz(data) {
         var word_id = 1;
         var acrossEntries = thisGrid.acrossEntries();
         Object.keys(acrossEntries).forEach(function(i) {
-            var thisWord = {'id': word_id++, 'cells': acrossEntries[i]['cells']};
+            var thisWord = {'id': word_id++, 'cells': acrossEntries[i]['cells'], 'dir': 'across'};
             words.push(thisWord);
         });
         var downEntries = thisGrid.downEntries();
         Object.keys(downEntries).forEach(function(i) {
-            var thisWord = {'id': word_id++, 'cells': downEntries[i]['cells']};
+            var thisWord = {'id': word_id++, 'cells': downEntries[i]['cells'], 'dir': 'down'};
             words.push(thisWord);
         });
     }
