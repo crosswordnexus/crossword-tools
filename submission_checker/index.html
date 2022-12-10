@@ -8,6 +8,13 @@
 
 <body>
 
+Minimum word length for dupes
+<select name="minLen" id="minLen">
+    <option value=3>3</option>
+    <option value=4 selected>4</option>
+    <option value=5>5</option>
+</select>
+<br />
 <input type="file" id="files" name="files" accept=".puz,.xml,.ipuz,.jpz,.xpz,.cfp" />
 
 <div id="results"></div>
@@ -20,6 +27,9 @@ var MY_GLOBAL;
 /** Handling form submission **/
 function handleFileSelect(evt) {
     const files = evt.target.files; // FileList object
+
+    // read in the "min length" number
+    const minLen = parseInt(document.getElementById('minLen').value)
 
     // files is a FileList of File objects.
     for (let i = 0, f; f = files[i]; i++) {
@@ -37,7 +47,7 @@ function handleFileSelect(evt) {
                     var xw_constructor = new JSCrossword();
                     var xw = xw_constructor.fromData(contents);
                     console.log(xw);
-                    document.getElementById('results').innerHTML = submission_check_html(xw);
+                    document.getElementById('results').innerHTML = submission_check_html(xw, minDupeLength=minLen);
                 };
             })(f);
             r.readAsBinaryString(f);
