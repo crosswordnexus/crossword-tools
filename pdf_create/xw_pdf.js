@@ -59,7 +59,7 @@ const printCharacters = (doc, textObject, startY, startX, fontSize) => {
 };
 
 // helper function for bold and italic clues
-function split_text_to_size_bi(clue, col_width, doc) {
+function split_text_to_size_bi(clue, col_width, doc, has_header=false) {
     // replace multiple whitespaces with just one
     //clue = clue.replace('\n', ' ');
     //clue = clue.replace(/\s+/g, ' ');
@@ -76,6 +76,18 @@ function split_text_to_size_bi(clue, col_width, doc) {
     if (clue.toUpperCase().indexOf('<B') == -1 && clue.toUpperCase().indexOf('<I') == -1) {
         return lines1;
     }
+    
+    // Check if there's a "header"
+    // if so, track the header, and separate out the clue
+    var header_line = null;
+    if (has_header) {
+        var clue_split = clue.split('\n');
+        header_line = clue_split[0];
+        clue = clue_split.slice(1).join('\n');
+        el.innerHTML = clue;
+        clean_clue = el.innerText;
+    }
+        
 
     // parse the clue into a tree
     var myClueArr = [];
@@ -106,6 +118,9 @@ function split_text_to_size_bi(clue, col_width, doc) {
         }
         lines.push(thisLine);
     });
+    if (has_header) {
+        lines = [header_line].concat(lines);
+    }
     return lines;
 }
 
@@ -558,7 +573,7 @@ function jscrossword_to_pdf(xw, options={}) {
                   }
 
                   // Split our clue
-                  var lines = split_text_to_size_bi(clue, col_width - (num_margin + line_margin), doc);
+                  var lines = split_text_to_size_bi(clue, col_width - (num_margin + line_margin), doc, i==0);
 
                   if (line_ypos + (lines.length - 1) * (clue_pt + clue_padding) > max_line_ypos) {
                       // move to new column
@@ -571,14 +586,17 @@ function jscrossword_to_pdf(xw, options={}) {
                           continue;
                       }
                   }
+                  
 
                   for (var j=0; j<lines.length; j++)
                   {
                       var line = lines[j];
+                      //console.log(i, j, k, line);
                       // Set the font to bold for the title
                       if (i==0 && j==0) {
                           doc.setFontType('bold');
                           printCharacters(doc, line, line_ypos, line_xpos, clue_pt);
+                          doc.setFontType('normal');
                           // add a little space after the header
                           line_ypos += clue_padding;
                       } else {
@@ -900,7 +918,7 @@ function jscrossword_to_nyt(xw, options={})
         var clue = clues[i];
         var entry = entries[i];
         //var lines = doc.splitTextToSize(clue,options.clue_width);
-        var lines = split_text_to_size_bi(clue, options.clue_width, doc);
+        var lines = split_text_to_size_bi(clue, options.clue_width, doc, i==0);
         // check that the clue fits; if not, make a new page
         if (clue_ypos + lines.length * options.clue_entry_pt + options.footer_pt + margin > DOC_HEIGHT) {
             doc.addPage();
