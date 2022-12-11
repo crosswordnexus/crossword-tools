@@ -41,21 +41,20 @@ function XMLElementToString(element) {
 
 function xw_read_jpz(data1) {
     var ERR_PARSE_JPZ = 'Error parsing JPZ file.';
-    // check if it's zipped
-    var data;
-    if (data1.match(/^<\?xml/)) {
-        data = data1;
+
+    var data = data1;
+    
+    // try to unzip (file may not be zipped)
+    var unzip = new JSUnzip();
+    var result = unzip.open(data1);
+    // there should be at most one file in here
+    // if it's not a zip file this will be an empty array
+    for (var n in unzip.files) {
+        var result2 = unzip.read(n);
+        data = result2.data;
+        break;
     }
-    else {
-        var unzip = new JSUnzip();
-        var result = unzip.open(data1);
-        // there should only be one file in here
-        for (var n in unzip.files) {
-            var result2 = unzip.read(n);
-            data = result2.data;
-            break;
-        }
-    }
+    
     data = BinaryStringToUTF8String(data);
     // create a DOMParser object
     var xml_string = data.replace('&nbsp;', ' ');
