@@ -223,16 +223,16 @@ function xw_read_jpz(data1) {
             var new_cells = cells_from_xy(x, y);
             word_cells = word_cells.concat(new_cells);
 
-        } else {
-            // the word must have "cells" attributes
-            var wc = word.getElementsByTagName('cells');
-            for (var j=0; j<wc.length; j++) {
-                cell = wc[j];
-                x = cell.getAttribute('x');
-                y = cell.getAttribute('y');
-                var new_cells = cells_from_xy(x, y);
-                word_cells = word_cells.concat(new_cells);
-            }
+        }
+        // otherwise the word must have "cells" attributes
+        // note that it may have both
+        var wc = word.getElementsByTagName('cells');
+        for (var j=0; j<wc.length; j++) {
+            cell = wc[j];
+            x = cell.getAttribute('x');
+            y = cell.getAttribute('y');
+            var new_cells = cells_from_xy(x, y);
+            word_cells = word_cells.concat(new_cells);
         }
         words.push({'id': id, 'cells': word_cells});
     }
