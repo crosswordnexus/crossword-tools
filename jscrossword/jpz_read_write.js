@@ -251,8 +251,12 @@ function xw_read_jpz(data1) {
             for (k=0; clue = clues_el[k]; k++) {
                 var word_id = clue.getAttribute('word');
                 var clue_number = clue.getAttribute('number');
-                var text = clue.innerHTML.trim();
-                this_clue.push({'text': text, 'word': word_id, 'number': clue_number});
+                var fmt = clue.getAttribute('format');
+                var _text = clue.innerHTML.trim();
+                if (fmt) {
+                    _text = _text + ` (${fmt})`;
+                }
+                this_clue.push({'text': _text, 'word': word_id, 'number': clue_number});
             }
             clues.push({'title': title, 'clue': this_clue});
         }
