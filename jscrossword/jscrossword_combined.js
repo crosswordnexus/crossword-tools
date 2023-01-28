@@ -203,6 +203,7 @@ function xw_read_ipuz(data) {
                 } else if (solution.cell) {
                     solution = solution.cell;
                 }
+                if (solution) {solution = solution.toUpperCase();}
 
             } catch {}
             // type
@@ -253,7 +254,7 @@ function xw_read_ipuz(data) {
             var new_cell = {
                 x: x,
                 y: y,
-                solution: solution.toUpperCase(),
+                solution: solution,
                 number: number,
                 type: type,
                 "background-color": background_color,
