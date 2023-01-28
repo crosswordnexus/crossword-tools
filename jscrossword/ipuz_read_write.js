@@ -127,7 +127,7 @@ function xw_read_ipuz(data) {
             var new_cell = {
                 x: x,
                 y: y,
-                solution: solution,
+                solution: solution.toUpperCase(),
                 number: number,
                 type: type,
                 "background-color": background_color,
