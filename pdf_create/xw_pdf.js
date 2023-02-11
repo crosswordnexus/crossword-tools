@@ -407,7 +407,7 @@ function jscrossword_to_pdf(xw, options={}) {
         // handle puzzles with very few words (or acrostics!) 
         // max 5 columns
         else if (clue_length <= 1000 || xw.metadata.crossword_type == 'acrostic') {
-            options.num_columns = Math.min(Math.ceil(clue_length/400), 5);
+            options.num_columns = Math.min(Math.ceil(clue_length/350), 5);
             options.num_full_columns = 0;
         }
         else if (xw_height >= 17) {
