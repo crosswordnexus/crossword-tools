@@ -76,7 +76,7 @@ function split_text_to_size_bi(clue, col_width, doc, has_header=false) {
     if (clue.toUpperCase().indexOf('<B') == -1 && clue.toUpperCase().indexOf('<I') == -1) {
         return lines1;
     }
-    
+
     // Check if there's a "header"
     // if so, track the header, and separate out the clue
     var header_line = null;
@@ -87,7 +87,7 @@ function split_text_to_size_bi(clue, col_width, doc, has_header=false) {
         el.innerHTML = clue;
         clean_clue = el.innerText;
     }
-        
+
 
     // parse the clue into a tree
     var myClueArr = [];
@@ -188,7 +188,7 @@ function draw_crossword_grid(doc, xw, options)
             } : null;
         }
 
-        var MIN_NUMBER_SIZE = 5.5;
+        var MIN_NUMBER_SIZE = 4;
 
         var filled_string = (filled ? 'F' : '');
         var number_offset = cell_size/20;
@@ -355,9 +355,11 @@ function jscrossword_to_pdf(xw, options={}) {
     var PTS_PER_IN = 72;
     var DOC_WIDTH = 8.5 * PTS_PER_IN;
     var DOC_HEIGHT = 11 * PTS_PER_IN;
-    if (options.orientation == 'landscape') {
+    // acrostics always get printed in landscape
+    if (options.orientation == 'landscape' || xw.metadata.crossword_type == 'acrostic') {
       DOC_WIDTH = 11 * PTS_PER_IN;
       DOC_HEIGHT = 8.5 * PTS_PER_IN;
+      options.orientation = 'landscape';
     } else {options.orientation = 'portrait';}
 
 
@@ -400,13 +402,19 @@ function jscrossword_to_pdf(xw, options={}) {
         var word_count = xw.words.length;
         var clue_length = xw.clues.map(x=>x.clue).flat().map(x=>x.text).join('').length;
         //console.log(clue_length);
-        if (xw_height > 2 * xw_width) {
+
+        // we handle acrostics separately
+        if (xw.metadata.crossword_type == 'acrostic') {
+          options.num_columns = 4;
+          options.num_full_columns = 1;
+        }
+        else if (xw_height > 2 * xw_width) {
             options.num_columns = 5;
             options.num_full_columns = 3;
         }
-        // handle puzzles with very few words (or acrostics!) 
+        // handle puzzles with very few words
         // max 5 columns
-        else if (clue_length <= 1000 || xw.metadata.crossword_type == 'acrostic') {
+        else if (clue_length <= 1000) {
             options.num_columns = Math.min(Math.ceil(clue_length/350), 5);
             options.num_full_columns = 0;
         }
@@ -587,7 +595,7 @@ function jscrossword_to_pdf(xw, options={}) {
                           continue;
                       }
                   }
-                  
+
 
                   for (var j=0; j<lines.length; j++)
                   {
