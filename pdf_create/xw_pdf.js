@@ -451,6 +451,11 @@ function jscrossword_to_pdf(xw, options={}) {
             var e = xw.clues[j]['clue'][i];
             var num = e.number;
             var clue = e.text;
+            // for acrostics, we don't print a clue without a "number"
+            if (xw.metadata.crossword_type == 'acrostic' && !num) {
+                continue;
+            }
+
             //var this_clue_string = num + '. ' + clue;
             var this_clue_string = clue;
             if (i==0) {
