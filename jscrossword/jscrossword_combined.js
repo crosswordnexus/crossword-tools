@@ -344,8 +344,80 @@ function xw_read_ipuz(data) {
     return new JSCrossword(metadata, cells, words, clues);
 }
 
+// TODO: top-right-numbers
 function xw_write_ipuz(metadata, cells, words, clues) {
-}
+  j = {
+    "version": "http://ipuz.org/v1",
+    "kind": ["http://ipuz.org/crossword#1"],
+    "author": metadata.author,
+    "title": metadata.title,
+    "copyright": metadata.copyright,
+    "notes": metadata.description,
+    "intro": metadata.description,
+    "dimensions": {"width": metadata.width, "height": metadata.height},
+    "block": "#",
+    "empty": "_",
+  }
+  // puzzle and solution
+  const BARS = {'top': 'T', 'bottom': 'B', 'right': 'R', 'left': 'L'}
+  var puzzle = [];
+  var solution = [];
+  for (var y1=0; y1<metadata.height; y1++) {
+    var row = [];
+    var solutionRow = [];
+    for (var x1=0; x1<metadata.width; x1++) {
+      var cell = cells.find(z=>(z.x==x1 && z.y==y1));
+      solutionRow.push(cell.solution);
+      var thisCell;
+      if (cell.is_void) {
+        thisCell = null;
+      } else {
+        thisCell = {"cell": cell.number || '_'};
+        var style = {};
+        if (cell['background-shape'] == 'circle') {
+          style["shapebg"] = "circle";
+        }
+        if (cell['background-color']) {
+          style['color'] = cell['background-color'].replace('#', '');
+        }
+        barred = "";
+        Object.keys(BARS).forEach(function (b) {
+          if (cell[`${b}-bar`]) {
+            barred += BARS[b];
+          }
+        });
+        if (barred) {style['barred'] = barred;}
+        thisCell['style'] = style;
+        row.push(thisCell);
+      } // end if/else
+    } // end for x1
+    puzzle.push(row);
+    solution.push(solutionRow);
+  } // end for x
+  j['puzzle'] = puzzle;
+  j['solution'] = solution;
+
+  // CLUES
+  var ipuz_clues = {}
+  for (var i=0; i < clues.length; i++) {
+    var clueList = clues[i];
+    ipuz_clues[clueList.title] = [];
+    for (var k=0; k < clueList.clue.length; k++) {
+      var thisClue = clueList.clue[k];
+      var ipuzClue = {"clue": thisClue.text, "number": thisClue.number, "cells": []};
+      // find the associated word
+      var thisWord = words.find(x=>x.id==thisClue.word);
+      thisWord.cells.forEach(function (c) {
+        ipuzClue.cells.push([c[0]+1, c[1]+1]);
+      });
+      ipuz_clues[clueList.title].push(ipuzClue);
+    }
+  }
+  j['clues'] = ipuz_clues;
+
+  var j_str = JSON.stringify(j);
+  return j_str;
+} // end xw_write_ipuz()
 /**
 * JPZ reading/writing functions
 * copyright (c) 2021 Crossword Nexus
@@ -354,13 +426,25 @@ function xw_write_ipuz(metadata, cells, words, clues) {
 
 // helper function to escape HTML
 function escapeHtml(unsafe) {
-    return unsafe
-         .replace(/&/g, "&amp;")
-         .replace(/</g, "&lt;")
-         .replace(/>/g, "&gt;")
-         .replace(/"/g, "&quot;")
-         .replace(/'/g, "&#039;");
+  return unsafe
+     .replace(/&/g, "&amp;")
+     .replace(/</g, "&lt;")
+     .replace(/>/g, "&gt;")
+     .replace(/"/g, "&quot;")
+     .replace(/'/g, "&#039;");
  }
+
+// for clues we leave certain tags
+function escapeHtmlClue(unsafe) {
+   var clue = escapeHtml(unsafe);
+   // anything other than these tags we just leave
+   const TAGS = ['i', 'b', 'sup', 'sub', 'span'];
+   TAGS.forEach(function (x) {
+     clue = clue.replaceAll(`&lt;${x}&gt;`, `<${x}>`);
+     clue = clue.replaceAll(`&lt;/${x}&gt;`, `</${x}>`);
+   });
+   return clue;
+}
 
 function XMLElementToString(element) {
     var i,
@@ -391,7 +475,7 @@ function xw_read_jpz(data1) {
     var ERR_PARSE_JPZ = 'Error parsing JPZ file.';
 
     var data = data1;
-    
+
     // try to unzip (file may not be zipped)
     var unzip = new JSUnzip();
     var result = unzip.open(data1);
@@ -402,10 +486,12 @@ function xw_read_jpz(data1) {
         data = result2.data;
         break;
     }
-    
+
     data = BinaryStringToUTF8String(data);
     // create a DOMParser object
     var xml_string = data.replace('&nbsp;', ' ');
+    // remove namespaces too?
+    xml_string = xml_string.replace(/xmlns=\"[^\"]+"/g, '');
     var parser, xmlDoc;
     if (window.DOMParser) {
         parser = new DOMParser();
@@ -673,7 +759,7 @@ function xw_write_jpz(metadata, cells, words, clues) {
         jpz_string += `        <title>${clues[i].title}</title>\n`;
         for (j=0; j < clues[i].clue.length; j++) {
             var my_clue = clues[i].clue[j];
-            var my_clue_text = escapeHtml(my_clue.text);
+            var my_clue_text = escapeHtmlClue(my_clue.text);
             jpz_string += `        <clue word="${my_clue.word}" number="${my_clue.number}">${my_clue_text}</clue>\n`;
         }
         jpz_string += `    </clues>\n`;
@@ -1014,6 +1100,11 @@ class JSCrossword {
     toJPZString() {
         return xw_write_jpz(this.metadata, this.cells, this.words, this.clues);
     }
+
+    toIpuzString() {
+        return xw_write_ipuz(this.metadata, this.cells, this.words, this.clues);
+    }
+
 }
 
 /**

@@ -218,5 +218,77 @@ function xw_read_ipuz(data) {
     return new JSCrossword(metadata, cells, words, clues);
 }
 
+// TODO: top-right-numbers
 function xw_write_ipuz(metadata, cells, words, clues) {
-}
+  j = {
+    "version": "http://ipuz.org/v1",
+    "kind": ["http://ipuz.org/crossword#1"],
+    "author": metadata.author,
+    "title": metadata.title,
+    "copyright": metadata.copyright,
+    "notes": metadata.description,
+    "intro": metadata.description,
+    "dimensions": {"width": metadata.width, "height": metadata.height},
+    "block": "#",
+    "empty": "_",
+  }
+  // puzzle and solution
+  const BARS = {'top': 'T', 'bottom': 'B', 'right': 'R', 'left': 'L'}
+  var puzzle = [];
+  var solution = [];
+  for (var y1=0; y1<metadata.height; y1++) {
+    var row = [];
+    var solutionRow = [];
+    for (var x1=0; x1<metadata.width; x1++) {
+      var cell = cells.find(z=>(z.x==x1 && z.y==y1));
+      solutionRow.push(cell.solution);
+      var thisCell;
+      if (cell.is_void) {
+        thisCell = null;
+      } else {
+        thisCell = {"cell": cell.number || '_'};
+        var style = {};
+        if (cell['background-shape'] == 'circle') {
+          style["shapebg"] = "circle";
+        }
+        if (cell['background-color']) {
+          style['color'] = cell['background-color'].replace('#', '');
+        }
+        barred = "";
+        Object.keys(BARS).forEach(function (b) {
+          if (cell[`${b}-bar`]) {
+            barred += BARS[b];
+          }
+        });
+        if (barred) {style['barred'] = barred;}
+        thisCell['style'] = style;
+        row.push(thisCell);
+      } // end if/else
+    } // end for x1
+    puzzle.push(row);
+    solution.push(solutionRow);
+  } // end for x
+  j['puzzle'] = puzzle;
+  j['solution'] = solution;
+
+  // CLUES
+  var ipuz_clues = {}
+  for (var i=0; i < clues.length; i++) {
+    var clueList = clues[i];
+    ipuz_clues[clueList.title] = [];
+    for (var k=0; k < clueList.clue.length; k++) {
+      var thisClue = clueList.clue[k];
+      var ipuzClue = {"clue": thisClue.text, "number": thisClue.number, "cells": []};
+      // find the associated word
+      var thisWord = words.find(x=>x.id==thisClue.word);
+      thisWord.cells.forEach(function (c) {
+        ipuzClue.cells.push([c[0]+1, c[1]+1]);
+      });
+      ipuz_clues[clueList.title].push(ipuzClue);
+    }
+  }
+  j['clues'] = ipuz_clues;
+
+  var j_str = JSON.stringify(j);
+  return j_str;
+} // end xw_write_ipuz()

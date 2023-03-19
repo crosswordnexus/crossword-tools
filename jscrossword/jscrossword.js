@@ -329,6 +329,11 @@ class JSCrossword {
     toJPZString() {
         return xw_write_jpz(this.metadata, this.cells, this.words, this.clues);
     }
+
+    toIpuzString() {
+        return xw_write_ipuz(this.metadata, this.cells, this.words, this.clues);
+    }
+
 }
 
 /**

@@ -6,13 +6,25 @@
 
 // helper function to escape HTML
 function escapeHtml(unsafe) {
-    return unsafe
-         .replace(/&/g, "&amp;")
-         .replace(/</g, "&lt;")
-         .replace(/>/g, "&gt;")
-         .replace(/"/g, "&quot;")
-         .replace(/'/g, "&#039;");
+  return unsafe
+     .replace(/&/g, "&amp;")
+     .replace(/</g, "&lt;")
+     .replace(/>/g, "&gt;")
+     .replace(/"/g, "&quot;")
+     .replace(/'/g, "&#039;");
  }
+
+// for clues we leave certain tags
+function escapeHtmlClue(unsafe) {
+   var clue = escapeHtml(unsafe);
+   // anything other than these tags we just leave
+   const TAGS = ['i', 'b', 'sup', 'sub', 'span'];
+   TAGS.forEach(function (x) {
+     clue = clue.replaceAll(`&lt;${x}&gt;`, `<${x}>`);
+     clue = clue.replaceAll(`&lt;/${x}&gt;`, `</${x}>`);
+   });
+   return clue;
+}
 
 function XMLElementToString(element) {
     var i,
@@ -43,7 +55,7 @@ function xw_read_jpz(data1) {
     var ERR_PARSE_JPZ = 'Error parsing JPZ file.';
 
     var data = data1;
-    
+
     // try to unzip (file may not be zipped)
     var unzip = new JSUnzip();
     var result = unzip.open(data1);
@@ -54,10 +66,12 @@ function xw_read_jpz(data1) {
         data = result2.data;
         break;
     }
-    
+
     data = BinaryStringToUTF8String(data);
     // create a DOMParser object
     var xml_string = data.replace('&nbsp;', ' ');
+    // remove namespaces too?
+    xml_string = xml_string.replace(/xmlns=\"[^\"]+"/g, '');
     var parser, xmlDoc;
     if (window.DOMParser) {
         parser = new DOMParser();
@@ -325,7 +339,7 @@ function xw_write_jpz(metadata, cells, words, clues) {
         jpz_string += `        <title>${clues[i].title}</title>\n`;
         for (j=0; j < clues[i].clue.length; j++) {
             var my_clue = clues[i].clue[j];
-            var my_clue_text = escapeHtml(my_clue.text);
+            var my_clue_text = escapeHtmlClue(my_clue.text);
             jpz_string += `        <clue word="${my_clue.word}" number="${my_clue.number}">${my_clue_text}</clue>\n`;
         }
         jpz_string += `    </clues>\n`;
