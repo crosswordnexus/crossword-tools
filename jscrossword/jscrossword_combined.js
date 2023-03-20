@@ -344,7 +344,6 @@ function xw_read_ipuz(data) {
     return new JSCrossword(metadata, cells, words, clues);
 }
 
-// TODO: top-right-numbers
 function xw_write_ipuz(metadata, cells, words, clues) {
   j = {
     "version": "http://ipuz.org/v1",
@@ -359,7 +358,7 @@ function xw_write_ipuz(metadata, cells, words, clues) {
     "empty": "_",
   }
   // puzzle and solution
-  const BARS = {'top': 'T', 'bottom': 'B', 'right': 'R', 'left': 'L'}
+  const BARS = {'top': 'T', 'right': 'R', 'bottom': 'B', 'left': 'L'}
   var puzzle = [];
   var solution = [];
   for (var y1=0; y1<metadata.height; y1++) {
@@ -379,6 +378,9 @@ function xw_write_ipuz(metadata, cells, words, clues) {
         }
         if (cell['background-color']) {
           style['color'] = cell['background-color'].replace('#', '');
+        }
+        if (cell['top-right-number']) {
+          style['mark'] = {"TR": cell['top-right-number']};
         }
         barred = "";
         Object.keys(BARS).forEach(function (b) {
