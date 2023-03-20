@@ -59,9 +59,13 @@ function handleFileSelect(evt) {
                     console.log(xw);
                     window.jsxw = xw;
                     //xw.from(contents);
-                    jscrossword_to_pdf(xw, options=options_obj);
+                    //jscrossword_to_pdf(xw, options=options_obj);
+
                     //var jpz_str = xw.toJPZString();
                     //file_download(jpz_str, 'test.jpz', 'text/xml');
+
+                    var ipuz_str = xw.toIpuzString();
+                    file_download(ipuz_str, 'test.ipuz', 'text/plain');
                 };
             })(f);
             r.readAsBinaryString(f);
