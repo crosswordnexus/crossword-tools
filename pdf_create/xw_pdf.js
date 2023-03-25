@@ -277,7 +277,7 @@ function draw_crossword_grid(doc, xw, options)
       }
       // Reset the text color, if necessary
       doc.setTextColor(0, 0, 0);
-    }
+    } // end draw_square()
 
     var width = xw.metadata.width;
     var height = xw.metadata.height;
@@ -298,8 +298,11 @@ function draw_crossword_grid(doc, xw, options)
         if (!options.grid_numbers) {number = '';}
         // circle
         var circle = c['background-shape'] == 'circle';
-        // draw the square unless it's a void
-        // or a block with a white background
+        // draw the square
+        // for diagramless puzzles don't put anything but the square
+        if (xw.metadata.crossword_type == 'diagramless') {
+          number = ''; letter = ''; filled = false;
+        }
         draw_square(doc,x_pos,y_pos,cell_size,number,letter,filled,c);
     });
 

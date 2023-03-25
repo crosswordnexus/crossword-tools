@@ -21,13 +21,17 @@ function xw_read_ipuz(data) {
     const BLOCK = data['block'] || '#';
     const EMPTY = data['empty'] || '0';
 
-    // We only support "crossword" for now
-    // TODO: add in acrostic support
+    // We only support "crossword" and "diagramless" for now
+    var crossword_type;
     if (kind.indexOf('crossword') !== -1) {
-        var crossword_type = 'crossword';
+        crossword_type = 'crossword';
+        if (kind.indexOf('diagramless') !== -1) {
+          crossword_type = 'diagramless';
+        }
     } else {
         throw `${kind} is not supported`;
     }
+
     var height = data["dimensions"]["height"];
     var width = data["dimensions"]["width"];
     var metadata = {
@@ -231,6 +235,12 @@ function xw_write_ipuz(metadata, cells, words, clues) {
     "block": "#",
     "empty": "_",
   }
+
+  // TODO: for squares purposes we may have to change numbering or something
+  if (metadata.crossword_type == 'diagramless') {
+    j["kind"] = ["http://ipuz.org/crossword/diagramless#1"]
+  }
+
   // puzzle and solution
   const BARS = {'top': 'T', 'right': 'R', 'bottom': 'B', 'left': 'L'}
   var puzzle = [];
