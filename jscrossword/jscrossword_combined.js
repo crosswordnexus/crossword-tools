@@ -157,7 +157,7 @@ function xw_read_ipuz(data) {
     } else {
         throw `${kind} is not supported`;
     }
-    
+
     var height = data["dimensions"]["height"];
     var width = data["dimensions"]["width"];
     var metadata = {
@@ -361,6 +361,12 @@ function xw_write_ipuz(metadata, cells, words, clues) {
     "block": "#",
     "empty": "_",
   }
+
+  // TODO: for squares purposes we may have to change numbering or something
+  if (metadata.crossword_type == 'diagramless') {
+    j["kind"] = ["http://ipuz.org/crossword/diagramless#1"]
+  }
+
   // puzzle and solution
   const BARS = {'top': 'T', 'right': 'R', 'bottom': 'B', 'left': 'L'}
   var puzzle = [];
