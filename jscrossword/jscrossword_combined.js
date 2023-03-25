@@ -147,13 +147,17 @@ function xw_read_ipuz(data) {
     const BLOCK = data['block'] || '#';
     const EMPTY = data['empty'] || '0';
 
-    // We only support "crossword" for now
-    // TODO: add in acrostic support
+    // We only support "crossword" and "diagramless" for now
+    var crossword_type;
     if (kind.indexOf('crossword') !== -1) {
-        var crossword_type = 'crossword';
+        crossword_type = 'crossword';
+        if (kind.indexOf('diagramless') !== -1) {
+          crossword_type = 'diagramless';
+        }
     } else {
         throw `${kind} is not supported`;
     }
+    
     var height = data["dimensions"]["height"];
     var width = data["dimensions"]["width"];
     var metadata = {
@@ -1346,6 +1350,8 @@ var ActiveXObject, parsedPuz, filecontents, PUZAPP = {};
 				strings_offset = grid_offset + wh,
 				cksum = cksum_region(bytes, 52, wh, c_cib),
 				nbrClues = getShort(bytes, 46),
+        puzzleTypeShort = getShort(bytes, 48),
+        isScrambledShort = getShort(bytes, 50),
 				extra_offset = findOffsetOfNth(bytes, strings_offset, '\u0000', nbrClues + 4),
 				offset = extra_offset,
 				sqNbr = 1,
@@ -1384,11 +1390,26 @@ var ActiveXObject, parsedPuz, filecontents, PUZAPP = {};
         retval.solution = string_convert(bytes.substring(52, 52 + wh));
         retval.strings = bytes.substring(strings_offset).split('\u0000', nbrClues + 4).map(string_convert);
         retval.grid = string_convert(bytes.substring(grid_offset, grid_offset + wh));
+
+        // We consider the puzzle to be diagramless if either
+        // (a) puzzleTypeShort == 0x0401 OR
+        // (b) there are colons in the grid
+        retval.crossword_type = 'crossword';
+        if (retval.grid.indexOf(':') !== -1 || puzzleTypeShort == 0x0401) {
+          retval.crossword_type = 'diagramless';
+        }
+
         // Replace "solution" with "grid" if the puzzle is filled
         if (retval.grid.indexOf('-') == -1)
         {
             retval.solution = retval.grid;
         }
+
+        // if the solution is scrambled, replace the "solution" with all "X"s
+        if (isScrambledShort !== 0) {
+          retval.solution = retval.solution.replace(/[^\.\-]/g, 'X')
+        }
+
         cksum = cksum_region(bytes, grid_offset, wh, cksum);
         var acrossWords = {}, downWords = {};
         for (y = 0; y < h; y++) {
@@ -1932,7 +1953,7 @@ function jscrossword_from_puz(puzdata) {
     , "description": puzdata.notes.trim()
     , "height": puzdata.height
     , "width": puzdata.width
-    , "crossword_type": "crossword"
+    , "crossword_type": puzdata.crossword_type
     }
 
     /* Rebus table (if needed) */
