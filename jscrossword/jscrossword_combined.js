@@ -164,7 +164,8 @@ function xw_read_ipuz(data) {
         'title': data['title'] || '',
         'author': data['author'] || '',
         'copyright': data['copyright'] || '',
-        'description': data.intro || '',
+        'description': data.notes || data.intro || '',
+        'intro': data.intro || null,
         'height': height,
         'width': width,
         'crossword_type': crossword_type,
@@ -955,10 +956,11 @@ class JSCrossword {
     * `metadata` has
       - title, author, copyright, description (notes)
       - height, width
-      - crossword_type (crossword, coded, acrostic)
+      - crossword_type (crossword, coded, acrostic, diagramless)
       OPTIONAL:
       - has_reveal (default: true)
       - completion_message
+      - intro
     * `cells` is an array of cells with the various attributes
       - x and y (0-indexed)
       - "type" = 'block' if it's a block
