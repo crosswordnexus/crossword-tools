@@ -1,6 +1,6 @@
-/**
+/*******************
 * CFP (CrossFire) reading and writing functions
-**/
+*******************/
 
 /* parsexml function via https://stackoverflow.com/a/19448718 */
 function parseXml(e,r){let t=null;if(window.DOMParser)t=(new DOMParser).parseFromString(e,"text/xml");else{if(!window.ActiveXObject)throw new Error("cannot parse xml string!");if((t=new ActiveXObject("Microsoft.XMLDOM")).async=!1,!t.loadXML(e))throw t.parseError.reason+" "+t.parseError.srcText}function o(e,t){if("#text"==e.nodeName){let r=e.nodeValue;return void(r.trim()&&(t["#text"]=r))}let n={},a=t[e.nodeName];if(a?Array.isArray(a)?t[e.nodeName].push(n):t[e.nodeName]=[a,n]:r&&-1!=r.indexOf(e.nodeName)?t[e.nodeName]=[n]:t[e.nodeName]=n,e.attributes)for(let r of e.attributes)n[r.nodeName]=r.nodeValue;for(let r of e.childNodes)o(r,n)}let n={};for(let e of t.childNodes)o(e,n);return n}
@@ -124,12 +124,12 @@ function xw_read_cfp(xml) {
 
 function xw_write_cfp(metadata, cells, words, clues) {
 }
-/**
+
+/*******************
 * iPUZ reading/writing functions
 * copyright (c) 2021 Crossword Nexus
 * MIT License https://opensource.org/licenses/MIT
-**/
-
+*******************/
 function xw_read_ipuz(data) {
     // If `data` is a string, convert to object
     if (typeof(data) === 'string') {
@@ -141,22 +141,19 @@ function xw_read_ipuz(data) {
     * `metadata` has title, author, copyright, description (notes), height, width, crossword_type
     */
     // determine the type of the crossword
-    var kind = data['kind'][0];
+    const ALLOWED_KINDS = ['crossword', 'diagramless', 'coded'];
+    var crossword_type = null;
+    data['kind'].forEach(function (k) {
+      ALLOWED_KINDS.forEach(function(ak) {
+        if (k.indexOf(ak) !== -1) {
+          crossword_type = ak;
+        }
+      });
+    });
 
     // determine what represents a block
     const BLOCK = data['block'] || '#';
     const EMPTY = data['empty'] || '0';
-
-    // We only support "crossword" and "diagramless" for now
-    var crossword_type;
-    if (kind.indexOf('crossword') !== -1) {
-        crossword_type = 'crossword';
-        if (kind.indexOf('diagramless') !== -1) {
-          crossword_type = 'diagramless';
-        }
-    } else {
-        throw `${kind} is not supported`;
-    }
 
     var height = data["dimensions"]["height"];
     var width = data["dimensions"]["width"];
@@ -290,11 +287,13 @@ function xw_read_ipuz(data) {
     var clues = [];
     var words = [];
     word_id = 1;
-    // Iterate through the titles of the clues
-    var titles = Object.keys(data['clues']);
+    // Iterate through the titles of the clues (if they exist)
+    var titles = Object.keys(data['clues']) || {};
     // Change the order if it's down first (CrossFire export bug)
-    if (titles[0].toLowerCase() == 'down' && titles[1].toLowerCase() == 'across') {
-        titles = [titles[1], titles[0]];
+    if (Object.keys(titles).length > 0) {
+      if (titles[0].toLowerCase() == 'down' && titles[1].toLowerCase() == 'across') {
+          titles = [titles[1], titles[0]];
+      }
     }
     titles.forEach( function(title) {
         var thisClues = [];
@@ -363,9 +362,11 @@ function xw_write_ipuz(metadata, cells, words, clues) {
     "empty": "_",
   }
 
-  // TODO: for squares purposes we may have to change numbering or something
+  // TODO: for squares purposes we may have to change numbering for diagramlesses
   if (metadata.crossword_type == 'diagramless') {
-    j["kind"] = ["http://ipuz.org/crossword/diagramless#1"]
+    j["kind"] = ["http://ipuz.org/crossword/diagramless#1"];
+  } else if (metadata.crossword_type == 'coded') {
+    j["kind"] = ["http://ipuz.org/crossword#1", "http://crosswordnexus.com/ipuz/coded#1"];
   }
 
   // puzzle and solution
@@ -431,12 +432,12 @@ function xw_write_ipuz(metadata, cells, words, clues) {
   var j_str = JSON.stringify(j);
   return j_str;
 } // end xw_write_ipuz()
-/**
+
+/*******************
 * JPZ reading/writing functions
 * copyright (c) 2021 Crossword Nexus
 * MIT License https://opensource.org/licenses/MIT
-**/
-
+*******************/
 // helper function to escape HTML
 function escapeHtml(unsafe) {
   return unsafe
@@ -784,9 +785,9 @@ function xw_write_jpz(metadata, cells, words, clues) {
 </crossword-compiler-applet>\n`;
     return jpz_string;
 }
-/**
+/*******************
 * Class for a crossword grid
-**/
+*******************/
 class xwGrid {
     constructor(cells) {
         this.cells = cells;
@@ -1056,7 +1057,9 @@ class JSCrossword {
     * Read in data from various file formats
     **/
 
-    /** puz **/
+    /********************
+    Puz files
+    *******************/
     // requires puz_read_write.js
     fromPuz(contents) {
         // Read data into a puzapp
@@ -1165,7 +1168,8 @@ function SHA1(r){function o(r,o){return r<<o|r>>>32-o}function e(r){var o,e="";f
 var tinf;function JSUnzip(){"use strict";this.getInt=function(t,e){switch(e){case 4:return this.data[t+3]<<24|this.data[t+2]<<16|this.data[t+1]<<8|this.data[t+0];case 2:return this.data[t+1]<<8|this.data[t+0];default:return this.data[t]}},this.getDOSDate=function(t,e){return new Date(1980+(t>>>9&127),(t>>>5&15)-1,31&t,e>>>11&31,e>>>5&63,2*(31&e))},this.stringOf=function(t){for(var e="",s=0;s<t.length;++s)e+=String.fromCharCode(t[s]);return e},this.open=function(t){var e;if("string"==typeof t)for(this.data=new Uint8Array(t.length),e=0;e<t.length;++e)this.data[e]=255&t.charCodeAt(e);else this.data=t;if(this.files=[],this.data.length<22)return{status:!1,error:"Invalid data"};for(var s=this.data.length-22;s>=0&&101010256!=this.getInt(s,4);)--s;if(s<0)return{status:!1,error:"Invalid data"};if(0!==this.getInt(s+4,2)||0!==this.getInt(s+6,2))return{status:!1,error:"No multidisk support"};var i=this.getInt(s+8,2),r=this.getInt(s+16,4),n=this.getInt(s+20,2);this.comment=this.stringOf(this.data.subarray(s+22,s+22+n));var a=r;for(e=0;e<i;++e){if(33639248!=this.getInt(a+0,4))return{status:!1,error:"Invalid data"};
 /*if(this.getInt(a+6,2)>20)return{status:!1,error:"Unsupported version"};*/
 if(1&this.getInt(a+8,2))return{status:!1,error:"Encryption not implemented"};var h=this.getInt(a+10,2);if(0!==h&&8!==h)return{status:!1,error:"Unsupported compression method"};var o=this.getInt(a+12,2),d=this.getInt(a+14,2),u=this.getDOSDate(d,o),c=(this.getInt(a+16,4),this.getInt(a+20,4)),l=this.getInt(a+24,4),f=this.getInt(a+28,2),b=this.getInt(a+30,2),g=this.getInt(a+32,2),_=this.getInt(a+42,4),I=this.stringOf(this.data.subarray(a+46,a+46+f)),v=this.stringOf(this.data.subarray(a+46+f+b,a+46+f+b+g));if(67324752!=this.getInt(_+0,4))return{status:!1,error:"Invalid data"};var m=_+30+this.getInt(_+26,2)+this.getInt(_+28,2);this.files[I]={fileComment:v,compressionMethod:h,compressedSize:c,uncompressedSize:l,localFileContent:m,lastModifiedDate:u},a+=46+f+b+g}return{status:!0}},this.readBinary=function(t){var e=this.files[t];if(e){if(8==e.compressionMethod){tinf||(tinf=new TINF).init();var s=tinf.uncompress(this.data,e.localFileContent,e.uncompressedSize);return s.status==tinf.OK?{status:!0,data:s.data}:{status:!1,error:s.error}}return{status:!0,data:this.data.subarray(e.localFileContent,e.localFileContent+e.uncompressedSize)}}return{status:!1,error:"File '"+t+"' doesn't exist in zip"}},this.read=function(t){var e=this.readBinary(t);return e.data&&(e.data=this.stringOf(e.data)),e}}function TINF(){this.OK=0,this.DATA_ERROR=-3,this.TREE=function(){this.table=new Array(16),this.trans=new Array(288)},this.DATA=function(t){this.source="",this.sourceIndex=0,this.tag=0,this.bitcount=0,this.dest=[],this.ltree=new t.TREE,this.dtree=new t.TREE},this.sltree=new this.TREE,this.sdtree=new this.TREE,this.length_bits=new Array(30),this.length_base=new Array(30),this.dist_bits=new Array(30),this.dist_base=new Array(30),this.clcidx=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15],this.build_bits_base=function(t,e,s,i){var r,n;for(r=0;r<s;++r)t[r]=0;for(r=0;r<30-s;++r)t[r+s]=Math.floor(r/s);for(n=i,r=0;r<30;++r)e[r]=n,n+=1<<t[r]},this.build_fixed_trees=function(t,e){var s;for(s=0;s<7;++s)t.table[s]=0;for(t.table[7]=24,t.table[8]=152,t.table[9]=112,s=0;s<24;++s)t.trans[s]=256+s;for(s=0;s<144;++s)t.trans[24+s]=s;for(s=0;s<8;++s)t.trans[168+s]=280+s;for(s=0;s<112;++s)t.trans[176+s]=144+s;for(s=0;s<5;++s)e.table[s]=0;for(e.table[5]=32,s=0;s<32;++s)e.trans[s]=s},this.build_tree=function(t,e,s,i){var r,n,a=new Array(16);for(r=0;r<16;++r)t.table[r]=0;for(r=0;r<i;++r)t.table[e[s+r]]++;for(t.table[0]=0,n=0,r=0;r<16;++r)a[r]=n,n+=t.table[r];for(r=0;r<i;++r)e[s+r]&&(t.trans[a[e[s+r]]++]=r)},this.getbit=function(t){var e;return t.bitcount--||(t.tag=t.source[t.sourceIndex++],t.bitcount=7),e=1&t.tag,t.tag>>>=1,e},this.read_bits=function(t,e,s){if(!e)return s;for(var i;t.bitcount<24;)t.tag=t.tag|t.source[t.sourceIndex++]<<t.bitcount,t.bitcount+=8;return i=t.tag&65535>>>16-e,t.tag>>>=e,t.bitcount-=e,i+s},this.decode_symbol=function(t,e){for(;t.bitcount<24;)t.tag=t.tag|t.source[t.sourceIndex++]<<t.bitcount,t.bitcount+=8;var s=0,i=0,r=0;do{i=2*i+((t.tag&1<<r)>>>r),++r,s+=e.table[r],i-=e.table[r]}while(i>=0);return t.tag>>>=r,t.bitcount-=r,e.trans[s+i]},this.decode_trees=function(t,e,s){var i,r,n,a,h,o,d=new this.TREE;for(lengths=new Array(320),i=this.read_bits(t,5,257),r=this.read_bits(t,5,1),n=this.read_bits(t,4,4),a=0;a<19;++a)lengths[a]=0;for(a=0;a<n;++a){var u=this.read_bits(t,3,0);lengths[this.clcidx[a]]=u}for(this.build_tree(d,lengths,0,19),h=0;h<i+r;){var c=this.decode_symbol(t,d);switch(c){case 16:var l=lengths[h-1];for(o=this.read_bits(t,2,3);o;--o)lengths[h++]=l;break;case 17:for(o=this.read_bits(t,3,3);o;--o)lengths[h++]=0;break;case 18:for(o=this.read_bits(t,7,11);o;--o)lengths[h++]=0;break;default:lengths[h++]=c}}this.build_tree(e,lengths,0,i),this.build_tree(s,lengths,i,r)},this.inflate_block_data=function(t,e,s){for(var i=t.dest,r=t.destIndex;;){var n,a,h,o,d=this.decode_symbol(t,e);if(256==d)return t.destIndex=r,this.OK;if(d<256)i[r++]=d;else for(d-=257,n=this.read_bits(t,this.length_bits[d],this.length_base[d]),a=this.decode_symbol(t,s),o=h=r-this.read_bits(t,this.dist_bits[a],this.dist_base[a]);o<h+n;++o)i[r++]=i[o]}},this.inflate_uncompressed_block=function(t){var e,s;if((e=256*(e=t.source[t.sourceIndex+1])+t.source[t.sourceIndex])!=(65535&~(256*t.source[t.sourceIndex+3]+t.source[t.sourceIndex+2])))return this.DATA_ERROR;for(t.sourceIndex+=4,s=e;s;--s)t.dest[t.destIndex]=t.source[t.sourceIndex++];return t.bitcount=0,this.OK},this.inflate_fixed_block=function(t){return this.inflate_block_data(t,this.sltree,this.sdtree)},this.inflate_dynamic_block=function(t){return this.decode_trees(t,t.ltree,t.dtree),this.inflate_block_data(t,t.ltree,t.dtree)},this.init=function(){this.build_fixed_trees(this.sltree,this.sdtree),this.build_bits_base(this.length_bits,this.length_base,4,3),this.build_bits_base(this.dist_bits,this.dist_base,2,1),this.length_bits[28]=0,this.length_base[28]=258},this.uncompress=function(t,e,s){var i,r=new this.DATA(this);r.source=t,r.sourceIndex=e,r.bitcount=0,r.dest=new Uint8Array(s),r.destIndex=0;do{var n;switch(i=this.getbit(r),this.read_bits(r,2,0)){case 0:n=this.inflate_uncompressed_block(r);break;case 1:n=this.inflate_fixed_block(r);break;case 2:n=this.inflate_dynamic_block(r);break;default:return{status:this.DATA_ERROR}}if(n!=this.OK)return{status:this.DATA_ERROR}}while(!i);return{status:this.OK,data:r.dest}}}
-/**
+
+/*******************
 * PUZ reading/writing functions
 
 * Parts of this code from xroz
@@ -1183,7 +1187,7 @@ if(1&this.getInt(a+8,2))return{status:!1,error:"Encryption not implemented"};var
 * Remainder of this code (c) 2016-2021 Alex Boisvert
 * licensed under MIT license
 * https://opensource.org/licenses/MIT
-**/
+*******************/
 
 /*jslint browser: true, bitwise: true, plusplus: true */
 var ActiveXObject, parsedPuz, filecontents, PUZAPP = {};
@@ -1609,12 +1613,12 @@ var ActiveXObject, parsedPuz, filecontents, PUZAPP = {};
 
 }());
 
-/**
+/*******************
  * For writing PUZ files
  * https://github.com/rjkat/anagrind/blob/master/client/js/puz.js
  * Released under MIT License
  * https://opensource.org/licenses/MIT
-**/
+*******************/
 
 // Strings in puz files are ISO-8859-1.
 
