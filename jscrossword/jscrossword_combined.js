@@ -352,11 +352,11 @@ function xw_write_ipuz(metadata, cells, words, clues) {
   j = {
     "version": "http://ipuz.org/v1",
     "kind": ["http://ipuz.org/crossword#1"],
-    "author": metadata.author,
-    "title": metadata.title,
-    "copyright": metadata.copyright,
-    "notes": metadata.description,
-    "intro": metadata.description,
+    "author": escapeHtml(metadata.author),
+    "title": escapeHtml(metadata.title),
+    "copyright": escapeHtml(metadata.copyright),
+    "notes": escapeHtml(metadata.description),
+    "intro": escapeHtml(metadata.description),
     "dimensions": {"width": metadata.width, "height": metadata.height},
     "block": "#",
     "empty": "_",
@@ -418,7 +418,7 @@ function xw_write_ipuz(metadata, cells, words, clues) {
     ipuz_clues[clueList.title] = [];
     for (var k=0; k < clueList.clue.length; k++) {
       var thisClue = clueList.clue[k];
-      var ipuzClue = {"clue": thisClue.text, "number": thisClue.number, "cells": []};
+      var ipuzClue = {"clue": escapeHtmlClue(thisClue.text), "number": thisClue.number, "cells": []};
       // find the associated word
       var thisWord = words.find(x=>x.id==thisClue.word);
       thisWord.cells.forEach(function (c) {
