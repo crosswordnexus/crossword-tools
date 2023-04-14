@@ -503,7 +503,9 @@ function xw_read_jpz(data1) {
     data = BinaryStringToUTF8String(data);
     // create a DOMParser object
     var xml_string = data.replace('&nbsp;', ' ');
-    // remove namespaces too?
+    // safari seems to have issues with Windows line endings
+    xml_string = xml_string.replace('\r\n', '\n');
+    // remove namespaces too
     xml_string = xml_string.replace(/xmlns=\"[^\"]+"/g, '');
     var parser, xmlDoc;
     if (window.DOMParser) {
