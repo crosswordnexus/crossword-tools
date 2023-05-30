@@ -410,7 +410,7 @@ function jscrossword_to_pdf(xw, options={}) {
         // we handle acrostics separately
         if (xw.metadata.crossword_type == 'acrostic') {
           var cell_count = xw.cells.map(x=>x.solution).filter(Boolean).length;
-          if (cell_count > 600) { // two pages
+          if (cell_count > 600 || clue_length > 1500) { // two pages
             options.num_pages = 2;
           } else {
             options.num_columns = 4;
