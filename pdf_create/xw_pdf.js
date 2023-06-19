@@ -412,6 +412,11 @@ function jscrossword_to_pdf(xw, options={}) {
           var cell_count = xw.cells.map(x=>x.solution).filter(Boolean).length;
           if (cell_count > 600 || clue_length > 1500) { // two pages
             options.num_pages = 2;
+          // small acrostics are handled separately
+          } else if (xw_height <= 15) {
+            options.num_columns = 3;
+            console.log(options.num_columns);
+            options.num_full_columns = 0;
           } else {
             options.num_columns = 4;
             options.num_full_columns = 1;
