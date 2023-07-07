@@ -241,7 +241,7 @@ function xw_read_ipuz(data) {
             var top_right_number = null;
             if (style.mark) {
                 top_right_number = style.mark.TR;
-                number = style.mark.TL;
+                number = style.mark.TL || number;
                 // TODO: we don't currently support bottom numbers
                 // we just read them in as `number` or `top_right_number` for now
                 if (!number) {number = style.mark.BL;}
