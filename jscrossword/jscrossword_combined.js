@@ -321,7 +321,7 @@ function xw_read_ipuz(data) {
             }
             word_id += 1;
         });
-        clues.push({'title': title, 'clue': thisClues});
+        clues.push({'title': title.split(':').at(-1), 'clue': thisClues});
     });
 
     /*
