@@ -339,6 +339,7 @@ function jscrossword_to_pdf(xw, options={}) {
     ,   notepad_min_pt: 8
     ,   orientation: 'portrait'
     ,   header1: '', header2: '', header3: ''
+    ,   max_cell_size: 24
     };
 
     for (var key in DEFAULT_OPTIONS) {
@@ -508,6 +509,10 @@ function jscrossword_to_pdf(xw, options={}) {
     if (options.num_full_columns === 0 || options.num_pages == 2) {
         // set the height to be (about) half of the available area
         grid_height = DOC_HEIGHT * 4/9;
+        // If there are very few clues we can increase the grid height
+        if (xw.clues.length < 10) {
+          grid_height = DOC_HEIGHT * 2/3;
+        }
         if (options.num_pages == 2) {
           grid_height = DOC_HEIGHT - (2 * margin + 3 * MAX_TITLE_PT + 4 * options.vertical_separator + 3 * options.notepad_max_pt);
         }
@@ -516,6 +521,14 @@ function jscrossword_to_pdf(xw, options={}) {
         if (grid_width > (DOC_WIDTH - 2 * margin)) {
             grid_width = (DOC_WIDTH - 2 * margin);
             grid_height = (grid_width / xw_width) * xw_height;
+        }
+
+        // we shouldn't let the squares get too big
+        var cell_size = grid_width / xw_width;
+        if (cell_size > options.max_cell_size) {
+          cell_size = options.max_cell_size;
+          grid_height = cell_size * xw_height;
+          grid_width = cell_size * xw_width;
         }
     }
 
