@@ -267,7 +267,6 @@ function draw_crossword_grid(doc, xw, options)
           for (var key in bar) {
               if (bar.hasOwnProperty(key)) {
                   if (bar[key]) {
-                      //console.log(options.bar_width);
                       doc.setLineWidth(options.bar_width);
                       doc.line(bar_start[key][0], bar_start[key][1], bar_end[key][0], bar_end[key][1]);
                       doc.setLineWidth(options.line_width);
@@ -390,7 +389,6 @@ function doc_with_clues(xw, options, doc_width, doc_height, clue_arrays, num_arr
               for (var j=0; j<lines.length; j++)
               {
                   var line = lines[j];
-                  //console.log(i, j, k, line);
                   // Set the font to bold for the title
                   if (i==0 && j==0) {
                       doc.setFontType('bold');
@@ -420,9 +418,10 @@ function doc_with_clues(xw, options, doc_width, doc_height, clue_arrays, num_arr
       }
 
       // let's not let the font get ridiculously tiny
-      if (clue_pt <= options.min_clue_pt)
+      if (clue_pt < options.min_clue_pt)
       {
           finding_font = false;
+          clue_pt = null;
       }
       else if (my_column > options.num_columns - 1)
       {
@@ -432,6 +431,11 @@ function doc_with_clues(xw, options, doc_width, doc_height, clue_arrays, num_arr
       {
           finding_font = false;
       }
+  }
+
+  // if we haven't made it to all the columns we don't progress
+  if (my_column < options.num_columns - 1 && options.num_columns > options.min_columns) {
+    clue_pt = null;
   }
 
   return {doc: doc, clue_pt: clue_pt};
@@ -504,8 +508,6 @@ function grid_props(xw, options, doc_width, doc_height) {
   // if there are no clues at all, center the y-position too
   if (!xw.clues.length || options.num_pages == 2) {
       grid_ypos = (doc_height - grid_height)/2;
-      console.log(grid_ypos);
-      console.log(grid_height);
   }
 
   // Determine how much space to set aside for the notepad
@@ -527,7 +529,6 @@ function grid_props(xw, options, doc_width, doc_height) {
     }
     var notepad_adj = (num_notepad_lines > 1 ? 1.1 : 1.2);
     notepad_height = num_notepad_lines * notepad_pt * notepad_adj;
-    //console.log(notepad_pt);
   }
   grid_ypos -= notepad_height;
 
@@ -562,7 +563,7 @@ function jscrossword_to_pdf(xw, options={}) {
     ,   column_padding: 10
     ,   gray: null
     ,   under_title_spacing : 20
-    ,   max_clue_pt : 14
+    ,   max_clue_pt : 13
     ,   min_clue_pt : 8
     ,   grid_padding : 5
     ,   outfile : null
@@ -573,10 +574,15 @@ function jscrossword_to_pdf(xw, options={}) {
     ,   notepad_min_pt: 8
     ,   orientation: 'portrait'
     ,   header1: '', header2: '', header3: ''
-    ,   max_cell_size: 24
+    ,   max_cell_size: 25
     ,   min_cell_size: 16
     ,   max_title_pt: 12
+    ,   max_columns: 5
+    ,   min_columns: 2
+    ,   min_grid_size: 240
     };
+
+    var clue_length = xw.clues.map(x=>x.clue).flat().map(x=>x.text).join('').length;
 
     for (var key in DEFAULT_OPTIONS) {
         if (!DEFAULT_OPTIONS.hasOwnProperty(key)) continue;
@@ -629,69 +635,34 @@ function jscrossword_to_pdf(xw, options={}) {
     }
 
     // If options.num_columns is null, we determine it ourselves
+    var possibleColumns = [];
     if (options.num_columns === null || options.num_full_columns === null)
     {
-        var word_count = xw.words.length;
-        var clue_length = xw.clues.map(x=>x.clue).flat().map(x=>x.text).join('').length;
-        //console.log(clue_length);
-
-        // we handle acrostics separately
-        if (xw.metadata.crossword_type == 'acrostic') {
-          var cell_count = xw.cells.map(x=>x.solution).filter(Boolean).length;
-          console.log(clue_length);
-          if (cell_count > 600 || clue_length > 1500) { // two pages
-            options.num_pages = 2;
-          // small acrostics are handled separately
-          } else if (xw_height <= 15) {
-            options.num_columns = 3;
-            console.log(options.num_columns);
-            options.num_full_columns = 0;
-          } else if (clue_length > 1000) {
-            options.num_columns = 4;
-            options.num_full_columns = 1;
-          } else {
-            options.num_columns = 5;
-            options.num_full_columns = 1;
+      // special logic for two pages
+      if (options.num_pages == 2) {
+        var numCols = Math.min(Math.ceil(clue_length/800), 5);
+        options.num_columns = numCols;
+        options.num_full_columns = numCols;
+        possibleColumns.push({num_columns: numCols, num_full_columns: numCols});
+      } else {
+        for (var nc = options.min_columns; nc <= options.max_columns; nc++) {
+          for (var fc = 0; fc <= nc - 1; fc++) {
+            // make the grid and check the cell size
+            options.num_columns = nc;
+            options.num_full_columns = fc;
+            var gp = grid_props(xw, options, DOC_WIDTH, DOC_HEIGHT);
+            if (gp.cell_size >= options.min_cell_size && (gp.grid_width >= options.min_grid_size && gp.grid_height >= options.min_grid_size)) {
+              possibleColumns.push({num_columns: nc, num_full_columns: fc});
+            }
           }
         }
-        else if (xw_height > 2 * xw_width) {
-            options.num_columns = 5;
-            options.num_full_columns = 3;
-        }
-        // handle puzzles with very few words
-        // max 5 columns
-        else if (clue_length <= 1000) {
-            options.num_columns = Math.min(Math.ceil(clue_length/350), 5);
-            options.num_full_columns = 0;
-        }
-        else if (xw_height >= 17) {
-            options.num_columns = 5;
-            options.num_full_columns = 2;
-        }
-        else if (xw_width > 17) {
-            options.num_columns = 4;
-            options.num_full_columns = 1;
-        }
-        else if (clue_length >= 1600) {
-            options.num_columns = 5;
-            options.num_full_columns = 2;
-        }
-        else {
-            options.num_columns = 3;
-            options.num_full_columns = 1;
-        }
-
-        // special logic for two pages
-        if (options.num_pages == 2) {
-          var numCols = Math.min(Math.ceil(clue_length/800), 5);
-          options.num_columns = numCols;
-          options.num_full_columns = numCols;
-        }
+      }
+    } else {
+      possibleColumns = [{num_columns: options.num_columns, num_full_columns: options.num_full_columns}];
     }
 
     // The maximum font size of title and author
     var max_title_author_pt = MAX_TITLE_PT;
-
     var doc;
 
     // create the clue strings and clue arrays
@@ -728,9 +699,56 @@ function jscrossword_to_pdf(xw, options={}) {
         num_arrays.push(these_nums);
     }
 
-    // call the grid function here
-    var gridProps = grid_props(xw, options, DOC_WIDTH, DOC_HEIGHT);
-    console.log(gridProps);
+    // Loop through and write to PDF if we find a good fit
+    // Find an appropriate font size
+    // don't do this if there are no clues
+    // qweqwe
+    doc = new jsPDF(options.orientation, 'pt', 'letter');
+    if (xw.clues.length) {
+      var possibleDocs = [];
+      possibleColumns.forEach(function(pc) {
+        options.num_columns = pc.num_columns;
+        options.num_full_columns = pc.num_full_columns;
+        var gridProps = grid_props(xw, options, DOC_WIDTH, DOC_HEIGHT);
+        docObj = doc_with_clues(xw, options, DOC_WIDTH, DOC_HEIGHT, clue_arrays, num_arrays, gridProps);
+        if (docObj.clue_pt) {
+          possibleDocs.push({docObj: docObj, gridProps: gridProps, columns: pc});
+        }
+      });
+    } // END if clues
+
+    // If there are no possibilities here go to two pages
+    if (possibleDocs.length == 0) {
+      var numCols = Math.min(Math.ceil(clue_length/800), 5);
+      options.num_columns = numCols;
+      options.num_full_columns = numCols;
+      options.num_pages = 2;
+      var gridProps = grid_props(xw, options, DOC_WIDTH, DOC_HEIGHT);
+      docObj = doc_with_clues(xw, options, DOC_WIDTH, DOC_HEIGHT, clue_arrays, num_arrays, gridProps);
+      var pc = {num_columns: numCols, num_full_columns: numCols};
+      possibleDocs.push({docObj: docObj, gridProps: gridProps, columns: pc});
+    }
+
+
+    console.log(possibleDocs);
+
+    // How do we pick from among these options?
+    // we need an objective function
+    // let's say we want the mean of everything?
+    var selectedDoc;
+    var obj_val = 1e6;
+    const ideal_clue_pt = (options.max_clue_pt + options.max_clue_pt)/2.;
+    const ideal_cell_size = (options.max_cell_size + options.max_cell_size)/2.;
+    possibleDocs.forEach(function (pd) {
+      var thisVal = (pd.gridProps.cell_size - ideal_cell_size)**2 + (pd.docObj.clue_pt - ideal_clue_pt)**2;
+      if (thisVal < obj_val) {
+        obj_val = thisVal;
+        selectedDoc = pd;
+      }
+    });
+
+    doc = selectedDoc.docObj.doc;
+    var gridProps = selectedDoc.gridProps;
     var grid_xpos = gridProps.grid_xpos
     var grid_ypos = gridProps.grid_ypos;
     var grid_width = gridProps.grid_width;
@@ -741,16 +759,6 @@ function jscrossword_to_pdf(xw, options={}) {
     var notepad_lines = gridProps.notepad_lines;
     var notepad_xpos = gridProps.notepad_xpos;
     var notepad_ypos = gridProps.notepad_ypos;
-
-    // Loop through and write to PDF if we find a good fit
-    // Find an appropriate font size
-    // don't do this if there are no clues
-    doc = new jsPDF(options.orientation, 'pt', 'letter');
-    if (xw.clues.length) {
-      docObj = doc_with_clues(xw, options, DOC_WIDTH, DOC_HEIGHT, clue_arrays, num_arrays, gridProps);
-      doc = docObj.doc;
-      var clue_pt = docObj.clue_pt;
-    } // END if clues
 
     /***********************/
 
@@ -808,8 +816,6 @@ function jscrossword_to_pdf(xw, options={}) {
         doc.text(title_xpos, title_author_ypos, options.header1);
         doc.text(right_xpos, title_author_ypos, options.header2, null, null, 'right');
         title_author_ypos += max_title_author_pt + options.vertical_separator;
-        console.log(max_title_author_pt);
-        console.log(options.vertical_separator);
       }
 
       //title
