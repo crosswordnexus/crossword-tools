@@ -166,7 +166,7 @@ function xw_read_ipuz(data) {
         'height': height,
         'width': width,
         'crossword_type': crossword_type,
-        'fakeclues': data.fakeclues
+        'fakeclues': data.fakeclues || false
     };
 
     /*
@@ -548,12 +548,17 @@ function xw_read_jpz(data1) {
         };
     }
 
-    var metadata = {'title': '', 'author': '', 'copyright': '', 'description': ''};
+    var metadata = {
+      'title': '', 'author': ''
+    , 'copyright': '', 'description': ''
+    , 'fakeclues': false
+    };
 
     var title = jpz_metadata[0].getElementsByTagName('title');
     var creator = jpz_metadata[0].getElementsByTagName('creator');
     var copyright = jpz_metadata[0].getElementsByTagName('copyright');
     var description = jpz_metadata[0].getElementsByTagName('description');
+    var fakeclues = Boolean(jpz_metadata[0].getElementsByTagName('fakeclues').length);
 
     if (title.length) {
         metadata['title'] = XMLElementToString(title[0]);
@@ -568,6 +573,7 @@ function xw_read_jpz(data1) {
         metadata['description'] = XMLElementToString(description[0]);
     }
 
+    metadata['fakeclues'] = fakeclues;
     metadata['crossword_type'] = crossword_type;
 
     // logic for check/reveal buttons
