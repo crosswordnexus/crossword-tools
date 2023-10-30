@@ -333,6 +333,11 @@ function doc_with_clues(xw, options, doc_width, doc_height, clue_arrays, num_arr
     has_top_header_row = 0;
   }
 
+  var doc = new jsPDF(options.orientation, 'pt', 'letter');
+  if (!xw.clues.length) {
+    return {doc: doc, clue_pt: 1};
+  }
+
   while (finding_font)
   {
       doc = new jsPDF(options.orientation, 'pt', 'letter');
@@ -704,8 +709,8 @@ function jscrossword_to_pdf(xw, options={}) {
     // don't do this if there are no clues
     // qweqwe
     doc = new jsPDF(options.orientation, 'pt', 'letter');
+    var possibleDocs = [];
     if (xw.clues.length) {
-      var possibleDocs = [];
       possibleColumns.forEach(function(pc) {
         options.num_columns = pc.num_columns;
         options.num_full_columns = pc.num_full_columns;
@@ -715,7 +720,11 @@ function jscrossword_to_pdf(xw, options={}) {
           possibleDocs.push({docObj: docObj, gridProps: gridProps, columns: pc});
         }
       });
-    } // END if clues
+    } else {
+      var gridProps = grid_props(xw, options, DOC_WIDTH, DOC_HEIGHT);
+      docObj = doc_with_clues(xw, options, DOC_WIDTH, DOC_HEIGHT, clue_arrays, num_arrays, gridProps);
+      possibleDocs.push({docObj: docObj, gridProps: gridProps, columns: {}});
+    }
 
     // If there are no possibilities here go to two pages
     if (possibleDocs.length == 0) {
@@ -736,12 +745,13 @@ function jscrossword_to_pdf(xw, options={}) {
     // we need an objective function
     // let's say we want the mean of everything?
     var selectedDoc;
-    var obj_val = 1e6;
-    const ideal_clue_pt = (options.max_clue_pt + options.max_clue_pt)/2.;
-    const ideal_cell_size = (options.max_cell_size + options.max_cell_size)/2.;
+    var obj_val = 0;
+    //const ideal_clue_pt = (options.max_clue_pt + options.max_clue_pt)/2.;
+    //const ideal_cell_size = (options.max_cell_size + options.max_cell_size)/2.;
     possibleDocs.forEach(function (pd) {
-      var thisVal = (pd.gridProps.cell_size - ideal_cell_size)**2 + (pd.docObj.clue_pt - ideal_clue_pt)**2;
-      if (thisVal < obj_val) {
+      //var thisVal = (pd.gridProps.cell_size - ideal_cell_size)**2 + (pd.docObj.clue_pt - ideal_clue_pt)**2;
+      var thisVal = pd.gridProps.cell_size/options.max_cell_size + pd.docObj.clue_pt/options.max_clue_pt;
+      if (thisVal > obj_val) {
         obj_val = thisVal;
         selectedDoc = pd;
       }
