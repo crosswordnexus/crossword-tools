@@ -298,13 +298,17 @@ function xw_read_ipuz(data) {
     titles.forEach( function(title) {
         var thisClues = [];
         data['clues'][title].forEach( function (clue) {
-            var number, text, refs;
-            // a "clue" can be an array or an object
+            var number = '', text = '', refs = {};
+            // a "clue" can be an array or an object (or a string?)
             if (Array.isArray(clue)) {
                 number = clue[0].toString();
                 text = clue[1];
-            } else {
-                number = clue.number.toString();
+            } else if (typeof clue === 'string') {
+              text = clue;
+            } else { // object
+                if (clue.number) {
+                  number = clue.number.toString();
+                }
                 text = clue.clue;
                 dict_references = clue.references;
                 dict_continued = clue.continued;
