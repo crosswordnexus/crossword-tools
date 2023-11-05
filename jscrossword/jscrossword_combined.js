@@ -109,7 +109,7 @@ function xw_read_cfp(xml) {
   var clues1 = {'ACROSS': [], 'DOWN': []};
   // clues and words are coupled in .cfp
   dataObj.WORDS.WORD.forEach( function(w) {
-      var word_id = Number(w.id) + 1000; // we don't want an ID of 0
+      var word_id = (Number(w.id) + 1000).toString(); // we don't want an ID of 0
       var number = w.num;
       var text = w['#text'];
       var thisDir = w.dir;
@@ -314,14 +314,14 @@ function xw_read_ipuz(data) {
                 dict_continued = clue.continued;
                 refs = Object.assign({}, dict_references, dict_continued); // treat these as the same
             }
-            thisClues.push({'word': word_id, 'number': number, 'text': text, 'refs': refs});
+            thisClues.push({'word': word_id.toString(), 'number': number, 'text': text, 'refs': refs});
             // Cells are coupled with clues in iPuz
             if (clue.cells) {
                 var thisCells = [];
                 clue.cells.forEach(function (thisCell) {
                     thisCells.push([thisCell[0]-1, thisCell[1]-1]);
                 });
-                words.push({'id': word_id, 'cells': thisCells});
+                words.push({'id': word_id.toString(), 'cells': thisCells});
             }
             word_id += 1;
         });
@@ -339,12 +339,12 @@ function xw_read_ipuz(data) {
         var word_id = 1;
         var acrossEntries = thisGrid.acrossEntries();
         Object.keys(acrossEntries).forEach(function(i) {
-            var thisWord = {'id': word_id++, 'cells': acrossEntries[i]['cells'], 'dir': 'across'};
+            var thisWord = {'id': (word_id++).toString(), 'cells': acrossEntries[i]['cells'], 'dir': 'across'};
             words.push(thisWord);
         });
         var downEntries = thisGrid.downEntries();
         Object.keys(downEntries).forEach(function(i) {
-            var thisWord = {'id': word_id++, 'cells': downEntries[i]['cells'], 'dir': 'down'};
+            var thisWord = {'id': (word_id++).toString(), 'cells': downEntries[i]['cells'], 'dir': 'down'};
             words.push(thisWord);
         });
     }
@@ -716,7 +716,7 @@ function xw_read_jpz(data1) {
                 if (fmt) {
                     _text = _text + ` (${fmt})`;
                 }
-                this_clue.push({'text': _text, 'word': word_id, 'number': clue_number});
+                this_clue.push({'text': _text, 'word': word_id.toString(), 'number': clue_number});
             }
             clues.push({'title': title, 'clue': this_clue});
         }
@@ -2036,7 +2036,7 @@ function jscrossword_from_puz(puzdata) {
     var across_clues = [];
     Object.keys(puzdata.across_entries).forEach(clue_number => {
         var this_word = puzdata.across_entries[clue_number];
-        var word = {"id": word_id};
+        var word = {"id": word_id.toString()};
         var word_indexes = puzdata.acrossWordNbrs.reduce(function(a, e, i) {
             if (e == clue_number) {
                 a.push(i);
@@ -2046,7 +2046,7 @@ function jscrossword_from_puz(puzdata) {
         var word_cells = word_indexes.map(e => xw_index_to_ij(e, puzdata.width));
         word['cells'] = word_cells;
         words.push(word);
-        across_clues.push({"text": puzdata.across_clues[clue_number], "word": word_id, "number": clue_number});
+        across_clues.push({"text": puzdata.across_clues[clue_number], "word": word_id.toString(), "number": clue_number});
         word_id = word_id + 1;
     });
     clues.push({"title": "ACROSS", "clue": across_clues});
@@ -2054,7 +2054,7 @@ function jscrossword_from_puz(puzdata) {
     var down_clues = [];
     Object.keys(puzdata.down_entries).forEach(clue_number => {
         var this_word = puzdata.down_entries[clue_number];
-        var word = {"id": word_id};
+        var word = {"id": word_id.toString()};
         var word_indexes = puzdata.downWordNbrs.reduce(function(a, e, i) {
             if (e == clue_number) {
                 a.push(i);
@@ -2064,7 +2064,7 @@ function jscrossword_from_puz(puzdata) {
         var word_cells = word_indexes.map(e => xw_index_to_ij(e, puzdata.width));
         word['cells'] = word_cells;
         words.push(word);
-        down_clues.push({"text": puzdata.down_clues[clue_number], "word": word_id, "number": clue_number});
+        down_clues.push({"text": puzdata.down_clues[clue_number], "word": word_id.toString(), "number": clue_number});
         word_id = word_id + 1;
     });
     clues.push({"title": "DOWN", "clue": down_clues});
