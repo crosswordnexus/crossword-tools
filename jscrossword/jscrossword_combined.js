@@ -349,7 +349,9 @@ function xw_read_ipuz(data) {
         });
     }
 
-    return new JSCrossword(metadata, cells, words, clues);
+    const fakewords = data.fakewords || null;
+
+    return new JSCrossword(metadata, cells, words, clues, fakewords);
 }
 
 function xw_write_ipuz(metadata, cells, words, clues) {
@@ -994,12 +996,17 @@ class JSCrossword {
          - a "text" value which is the actual clue
          - a "word" which is the associated word ID
          - an optional "number"
+    * `fakewords` is an optional iPuz-only field. It's an array of (usually) two arrays.
+      Each subarray is a list of objects with keys
+        - "word" which is optionally the word ID (currently unused)
+        - "cells" which are the cells of the "fake" word
     */
-    constructor(metadata, cells, words, clues) {
+    constructor(metadata, cells, words, clues, fakewords=null) {
         this.metadata = metadata;
         this.cells = cells;
         this.words = words;
         this.clues = clues;
+        this.fakewords = fakewords;
     }
 
     //CROSSWORD_TYPES = ['crossword', 'coded', 'acrostic'];
