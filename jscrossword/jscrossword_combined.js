@@ -166,7 +166,8 @@ function xw_read_ipuz(data) {
         'height': height,
         'width': width,
         'crossword_type': crossword_type,
-        'fakeclues': data.fakeclues || false
+        'fakeclues': data.fakeclues || false,
+        'word_locations': Boolean(data.words)
     };
 
     /*
@@ -316,7 +317,7 @@ function xw_read_ipuz(data) {
             }
             thisClues.push({'word': word_id.toString(), 'number': number, 'text': text, 'refs': refs});
             // Cells are coupled with clues in iPuz
-            if (clue.cells) {
+            if (clue.cells && clue.cells.length) {
                 var thisCells = [];
                 clue.cells.forEach(function (thisCell) {
                     thisCells.push([thisCell[0]-1, thisCell[1]-1]);
@@ -335,23 +336,35 @@ function xw_read_ipuz(data) {
     */
     // We only do this if we haven't already populated `words`
     if (!words.length) {
-        var thisGrid = new xwGrid(cells);
-        var word_id = 1;
-        var acrossEntries = thisGrid.acrossEntries();
-        Object.keys(acrossEntries).forEach(function(i) {
-            var thisWord = {'id': (word_id++).toString(), 'cells': acrossEntries[i]['cells'], 'dir': 'across'};
-            words.push(thisWord);
-        });
-        var downEntries = thisGrid.downEntries();
-        Object.keys(downEntries).forEach(function(i) {
-            var thisWord = {'id': (word_id++).toString(), 'cells': downEntries[i]['cells'], 'dir': 'down'};
-            words.push(thisWord);
-        });
+        if (!data.words) {
+          var thisGrid = new xwGrid(cells);
+          var word_id = 1;
+          var acrossEntries = thisGrid.acrossEntries();
+          Object.keys(acrossEntries).forEach(function(i) {
+              var thisWord = {'id': (word_id++).toString(), 'cells': acrossEntries[i]['cells'], 'dir': 'across'};
+              words.push(thisWord);
+          });
+          var downEntries = thisGrid.downEntries();
+          Object.keys(downEntries).forEach(function(i) {
+              var thisWord = {'id': (word_id++).toString(), 'cells': downEntries[i]['cells'], 'dir': 'down'};
+              words.push(thisWord);
+          });
+        } else {
+          // populate from "words"
+          var word_id = 1;
+          const directions = ['across', 'down'];
+          for (var i=0; i<data.words.length; i++) {
+            for (var j=0; j<data.words[i].length; j++) {
+              // don't forget that cells are 1-indexed in iPuz
+              newCells = data.words[i][j]['cells'].map(x=>[x[0]-1, x[1]-1]);
+              var thisWord = {'id': (word_id++).toString(), 'cells': newCells, 'dir': directions[i]};
+              words.push(thisWord);
+            }
+          }
+        }
     }
 
-    const fakewords = data.fakewords || null;
-
-    return new JSCrossword(metadata, cells, words, clues, fakewords);
+    return new JSCrossword(metadata, cells, words, clues);
 }
 
 function xw_write_ipuz(metadata, cells, words, clues) {
@@ -976,6 +989,8 @@ class JSCrossword {
       - has_reveal (default: true)
       - completion_message
       - intro
+      - word_locations
+      - fakeclues
     * `cells` is an array of cells with the various attributes
       - x and y (0-indexed)
       - "type" = 'block' if it's a block
@@ -996,17 +1011,12 @@ class JSCrossword {
          - a "text" value which is the actual clue
          - a "word" which is the associated word ID
          - an optional "number"
-    * `fakewords` is an optional iPuz-only field. It's an array of (usually) two arrays.
-      Each subarray is a list of objects with keys
-        - "word" which is optionally the word ID (currently unused)
-        - "cells" which are the cells of the "fake" word
     */
-    constructor(metadata, cells, words, clues, fakewords=null) {
+    constructor(metadata, cells, words, clues) {
         this.metadata = metadata;
         this.cells = cells;
         this.words = words;
         this.clues = clues;
-        this.fakewords = fakewords;
     }
 
     //CROSSWORD_TYPES = ['crossword', 'coded', 'acrostic'];
@@ -1047,8 +1057,13 @@ class JSCrossword {
         return this.solution_array;
     }
 
-    /** Create a mapping of word ID to entry **/
-    create_entry_mapping() {
+    /**
+    * Create a mapping of word ID to entry
+    * If `cells` is true, return the entry's cells instead of word
+    **/
+    create_entry_mapping(cells) {
+        // by default we don't return `cells`
+        cells = cells || false;
         var soln_arr = this.get_solution_array();
         var entryMapping = {};
         this.words.forEach(function(w) {
@@ -1057,15 +1072,20 @@ class JSCrossword {
             w.cells.forEach(function(arr) {
                 entry += soln_arr[arr[1]][arr[0]];
             });
-            entryMapping[_id] = entry;
+            if (cells) {
+              entryMapping[_id] = w.cells;
+            } else {
+              entryMapping[_id] = entry;
+            }
         });
         this.entry_mapping = entryMapping;
     }
 
     /** Get the entry mapping **/
-    get_entry_mapping() {
+    get_entry_mapping(cells) {
+        cells = cells || false;
         if (!this.entry_mapping) {
-            this.create_entry_mapping();
+            this.create_entry_mapping(cells);
         }
         return this.entry_mapping;
     }
@@ -1975,7 +1995,6 @@ function puzapp_to_puzpayload(puzdata) {
 
 /** Create a JSCrossword from a PUZAPP **/
 function jscrossword_from_puz(puzdata) {
-    console.log(puzdata);
     /* metadata */
     var metadata = {
       "title": puzdata.title.trim()
