@@ -743,19 +743,27 @@ function jscrossword_to_pdf(xw, options={}) {
 
     // How do we pick from among these options?
     // we need an objective function
-    // let's say we want the mean of everything?
+    // let's say we want things as big as possible?
     var selectedDoc;
-    var obj_val = 0;
-    //const ideal_clue_pt = (options.max_clue_pt + options.max_clue_pt)/2.;
+    var obj_val = 1000.;
+    const ideal_clue_pt = 11.;
     //const ideal_cell_size = (options.max_cell_size + options.max_cell_size)/2.;
+    // ideal grid area is about 1/3 the page area
+    const ideal_grid_area = DOC_WIDTH * DOC_HEIGHT * 0.25;
     possibleDocs.forEach(function (pd) {
+      //var thisVal = pd.gridProps.cell_size/options.max_cell_size + pd.docObj.clue_pt/options.max_clue_pt;
       //var thisVal = (pd.gridProps.cell_size - ideal_cell_size)**2 + (pd.docObj.clue_pt - ideal_clue_pt)**2;
-      var thisVal = pd.gridProps.cell_size/options.max_cell_size + pd.docObj.clue_pt/options.max_clue_pt;
-      if (thisVal > obj_val) {
+
+      var thisGridArea = pd.gridProps.grid_width * pd.gridProps.grid_height;
+      var thisVal = ((thisGridArea - ideal_grid_area)/ideal_grid_area)**2 + ((pd.docObj.clue_pt - ideal_clue_pt)/ideal_clue_pt)**2;
+      console.log(thisVal);
+      if (thisVal < obj_val) {
         obj_val = thisVal;
         selectedDoc = pd;
       }
     });
+
+    console.log(selectedDoc);
 
     doc = selectedDoc.docObj.doc;
     var gridProps = selectedDoc.gridProps;
