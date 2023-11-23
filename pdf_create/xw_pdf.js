@@ -423,7 +423,8 @@ function doc_with_clues(xw, options, doc_width, doc_height, clue_arrays, num_arr
       }
 
       // let's not let the font get ridiculously tiny
-      if (clue_pt < options.min_clue_pt)
+      // ignore this option if we have two pages
+      if (clue_pt < options.min_clue_pt && options.num_pages < 2)
       {
           finding_font = false;
           clue_pt = null;
@@ -568,7 +569,7 @@ function jscrossword_to_pdf(xw, options={}) {
     ,   column_padding: 10
     ,   gray: null
     ,   under_title_spacing : 20
-    ,   max_clue_pt : 13
+    ,   max_clue_pt : 14
     ,   min_clue_pt : 8
     ,   grid_padding : 5
     ,   outfile : null
@@ -656,7 +657,8 @@ function jscrossword_to_pdf(xw, options={}) {
             options.num_columns = nc;
             options.num_full_columns = fc;
             var gp = grid_props(xw, options, DOC_WIDTH, DOC_HEIGHT);
-            if (gp.cell_size >= options.min_cell_size && (gp.grid_width >= options.min_grid_size && gp.grid_height >= options.min_grid_size)) {
+            // we ignore "min_grid_size" for now
+            if (gp.cell_size >= options.min_cell_size) {
               possibleColumns.push({num_columns: nc, num_full_columns: fc});
             }
           }
@@ -707,7 +709,6 @@ function jscrossword_to_pdf(xw, options={}) {
     // Loop through and write to PDF if we find a good fit
     // Find an appropriate font size
     // don't do this if there are no clues
-    // qweqwe
     doc = new jsPDF(options.orientation, 'pt', 'letter');
     var possibleDocs = [];
     if (xw.clues.length) {
@@ -746,7 +747,7 @@ function jscrossword_to_pdf(xw, options={}) {
     // let's say we want things as big as possible?
     var selectedDoc;
     var obj_val = 1000.;
-    const ideal_clue_pt = 11.;
+    const ideal_clue_pt = 11.5;
     //const ideal_cell_size = (options.max_cell_size + options.max_cell_size)/2.;
     // ideal grid area is about 1/3 the page area
     const ideal_grid_area = DOC_WIDTH * DOC_HEIGHT * 0.25;
@@ -755,7 +756,8 @@ function jscrossword_to_pdf(xw, options={}) {
       //var thisVal = (pd.gridProps.cell_size - ideal_cell_size)**2 + (pd.docObj.clue_pt - ideal_clue_pt)**2;
 
       var thisGridArea = pd.gridProps.grid_width * pd.gridProps.grid_height;
-      var thisVal = ((thisGridArea - ideal_grid_area)/ideal_grid_area)**2 + ((pd.docObj.clue_pt - ideal_clue_pt)/ideal_clue_pt)**2;
+      // we want the clue point and grid area to be mostly ideal
+      var thisVal =  ((thisGridArea - ideal_grid_area)/ideal_grid_area)**2 + ((pd.docObj.clue_pt - ideal_clue_pt)/ideal_clue_pt)**2;
       console.log(thisVal);
       if (thisVal < obj_val) {
         obj_val = thisVal;
