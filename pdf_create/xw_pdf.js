@@ -440,7 +440,7 @@ function doc_with_clues(xw, options, doc_width, doc_height, clue_arrays, num_arr
   }
 
   // if we haven't made it to all the columns we don't progress
-  if (my_column < options.num_columns - 1 && options.num_columns > options.min_columns) {
+  if (my_column < options.num_columns - 1 && (options.num_columns > options.min_columns || options.num_full_columns > 0) ) {
     clue_pt = null;
   }
 
@@ -580,7 +580,7 @@ function jscrossword_to_pdf(xw, options={}) {
     ,   notepad_min_pt: 8
     ,   orientation: 'portrait'
     ,   header1: '', header2: '', header3: ''
-    ,   max_cell_size: 25
+    ,   max_cell_size: 30
     ,   min_cell_size: 16
     ,   max_title_pt: 12
     ,   max_columns: 5
@@ -749,7 +749,7 @@ function jscrossword_to_pdf(xw, options={}) {
     var obj_val = 1000.;
     const ideal_clue_pt = 11.5;
     //const ideal_cell_size = (options.max_cell_size + options.max_cell_size)/2.;
-    // ideal grid area is about 1/3 the page area
+    // ideal grid area is about 1/4 the page area
     const ideal_grid_area = DOC_WIDTH * DOC_HEIGHT * 0.25;
     possibleDocs.forEach(function (pd) {
       //var thisVal = pd.gridProps.cell_size/options.max_cell_size + pd.docObj.clue_pt/options.max_clue_pt;
