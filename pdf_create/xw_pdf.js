@@ -608,8 +608,8 @@ function jscrossword_to_pdf(xw, options={}) {
     var PTS_PER_IN = 72;
     var DOC_WIDTH = 8.5 * PTS_PER_IN;
     var DOC_HEIGHT = 11 * PTS_PER_IN;
-    // acrostics always get printed in landscape
-    if (options.orientation == 'landscape' || xw.metadata.crossword_type == 'acrostic') {
+    // wide puzzles get printed in landscape
+    if (options.orientation == 'landscape' || xw.metadata.width >= 30) {
       DOC_WIDTH = 11 * PTS_PER_IN;
       DOC_HEIGHT = 8.5 * PTS_PER_IN;
       options.orientation = 'landscape';
