@@ -267,7 +267,6 @@ function draw_crossword_grid(doc, xw, options)
           for (var key in bar) {
               if (bar.hasOwnProperty(key)) {
                   if (bar[key]) {
-                      //console.log(options.bar_width);
                       doc.setLineWidth(options.bar_width);
                       doc.line(bar_start[key][0], bar_start[key][1], bar_end[key][0], bar_end[key][1]);
                       doc.setLineWidth(options.line_width);
@@ -315,8 +314,250 @@ function draw_crossword_grid(doc, xw, options)
     });
 }
 
-/** Create a PDF (requires jsPDF) **/
+/**
+* Helper function to make a grid with clues
+**/
+function doc_with_clues(xw, options, doc_width, doc_height, clue_arrays, num_arrays, gridProps) {
+  var clue_pt = options.max_clue_pt;
+  var finding_font = true;
 
+  var max_title_author_pt = options.max_title_pt;
+
+  // extract info from gridProps
+  var col_width = gridProps.col_width;
+  var grid_ypos = gridProps.grid_ypos;
+
+  // If there is no header 1 / header 2 we can save some space
+  var has_top_header_row = 1;
+  if (!options.header1 && !options.header2) {
+    has_top_header_row = 0;
+  }
+
+  var doc = new jsPDF(options.orientation, 'pt', 'letter');
+  if (!xw.clues.length) {
+    return {doc: doc, clue_pt: 1};
+  }
+
+  while (finding_font)
+  {
+      doc = new jsPDF(options.orientation, 'pt', 'letter');
+      var clue_padding = clue_pt / 3;
+      doc.setFontSize(clue_pt);
+
+      doc.setLineWidth(options.line_width);
+
+      // Print the clues
+      // We set the margin to be the maximum length of the clue numbers
+      var max_clue_num_length = xw.clues.map(x=>x.clue).flat().map(x=>x.number).map(x => x.length).reduce((a, b) => Math.max(a, b));
+      var num_margin = doc.getTextWidth('9'.repeat(max_clue_num_length));
+      var num_xpos = options.margin + num_margin;
+      var line_margin = 1.5 * doc.getTextWidth(' ');
+      var line_xpos = num_xpos + line_margin;
+      var top_line_ypos = options.margin + // top margin
+                  has_top_header_row * (max_title_author_pt + options.vertical_separator) + // headers 1 & 2
+                  max_title_author_pt + // title + header 3
+                  options.vertical_separator * 2 + // padding
+                  clue_pt + clue_padding; // first clue
+      var line_ypos = top_line_ypos;
+      var my_column = 0;
+      for (var k=0; k<clue_arrays.length; k++) {
+          var clues = clue_arrays[k];
+          var nums = num_arrays[k];
+          for (var i=0; i<clues.length; i++) {
+              var clue = clues[i];
+              var num = nums[i];
+
+              // check to see if we need to wrap
+              var max_line_ypos;
+              if (my_column < options.num_full_columns) {
+                  max_line_ypos = doc_height - options.margin - options.max_title_pt - 2 * options.vertical_separator;
+              } else {
+                  max_line_ypos = grid_ypos - options.grid_padding;
+              }
+
+              // Split our clue
+              var lines = split_text_to_size_bi(clue, col_width - (num_margin + line_margin), doc, i==0);
+
+              if (line_ypos + (lines.length - 1) * (clue_pt + clue_padding) > max_line_ypos) {
+                  // move to new column
+                  my_column += 1;
+                  num_xpos = options.margin + num_margin + my_column * (col_width + options.column_padding);
+                  line_xpos = num_xpos + line_margin;
+                  line_ypos = top_line_ypos;
+                  // if we're at the top of a line we don't print a blank clue
+                  if (clue == '') {
+                      continue;
+                  }
+              }
+
+
+              for (var j=0; j<lines.length; j++)
+              {
+                  var line = lines[j];
+                  // Set the font to bold for the title
+                  if (i==0 && j==0) {
+                      doc.setFontType('bold');
+                      printCharacters(doc, line, line_ypos, line_xpos, clue_pt);
+                      doc.setFontType('normal');
+                      // add a little space after the header
+                      line_ypos += clue_padding;
+                  } else {
+                      if (j == 0 || (i==0 && j==1)) {
+                        // When j == 0 we print the number
+                        doc.setFontType('bold');
+                        doc.text(num_xpos, line_ypos, num, null, null, "right");
+                        doc.setFontType('normal');
+                      }
+                      // Print the clue
+                      doc.setFontType('normal');
+                      // print the text
+                      //doc.text(line_xpos,line_ypos,line);
+                      printCharacters(doc, line, line_ypos, line_xpos, clue_pt);
+                  }
+                  // set the y position for the next line
+                  line_ypos += clue_pt + clue_padding;
+              }
+              // Add a little extra space in between clues
+              line_ypos += clue_padding;
+          }
+      }
+
+      // let's not let the font get ridiculously tiny
+      // ignore this option if we have two pages
+      if (clue_pt < options.min_clue_pt && options.num_pages < 2)
+      {
+          finding_font = false;
+          clue_pt = null;
+      }
+      else if (my_column > options.num_columns - 1)
+      {
+          clue_pt -= 0.1;
+      }
+      else
+      {
+          finding_font = false;
+      }
+  }
+
+  // if we haven't made it to all the columns we don't progress
+  if (my_column < options.num_columns - 1 && (options.num_columns > options.min_columns || options.num_full_columns > 0) ) {
+    clue_pt = null;
+  }
+
+  return {doc: doc, clue_pt: clue_pt};
+
+}
+
+/**
+* Helper function to return parameters of a grid
+* (grid_width, grid_height, cell_size)
+* given the options and the number of columns
+**/
+function grid_props(xw, options, doc_width, doc_height) {
+  // size of columns
+  var col_width = (doc_width - 2 * options.margin - (options.num_columns -1 ) * options.column_padding) / options.num_columns;
+
+  // The grid is under all but the first few columns
+  var grid_width = doc_width - 2 * options.margin - options.num_full_columns * (col_width + options.column_padding);
+  var grid_height = (grid_width / xw.metadata.width) * xw.metadata.height;
+
+  // We change the grid width and height if num_full_columns == 0
+  // This is because we don't want it to take up too much space
+  if (options.num_full_columns === 0 || options.num_pages == 2) {
+      // set the height to be (about) half of the available area
+      grid_height = doc_height * 4/9;
+      // If there are very few clues we can increase the grid height
+      if (xw.clues.length < 10) {
+        grid_height = doc_height * 2/3;
+      }
+      if (options.num_pages == 2) {
+        grid_height = doc_height - (2 * options.margin + 3 * options.max_title_pt + 4 * options.vertical_separator + 3 * options.notepad_max_pt);
+      }
+      grid_width = (grid_height / xw.metadata.height) * xw.metadata.width;
+      // however! if this is bigger than allowable, re-calibrate
+      if (grid_width > (doc_width - 2 * options.margin)) {
+          grid_width = (doc_width - 2 * options.margin);
+          grid_height = (grid_width / xw.metadata.width) * xw.metadata.height;
+      }
+
+      // we shouldn't let the squares get too big
+      var cell_size = grid_width / xw.metadata.width;
+      if (cell_size > options.max_cell_size) {
+        cell_size = options.max_cell_size;
+        grid_height = cell_size * xw.metadata.height;
+        grid_width = cell_size * xw.metadata.width;
+      }
+  }
+
+  // x and y position of grid
+  // Reserve spot for the notepad
+  var notepad_ypos = doc_height - options.margin - options.max_title_pt - options.vertical_separator * 2;
+  var notepad_xpos;
+
+  var notepad_height = 0;
+  // helper value for multiplying
+  var show_notepad_int = options.show_notepad ? 1 : 0;
+
+  var grid_xpos = doc_width - options.margin - grid_width;
+  var grid_ypos = notepad_ypos - show_notepad_int * (options.vertical_separator + notepad_height) - grid_height;
+
+  var notepad_xpos = doc_width - options.margin - grid_width/2;
+
+  // we change the x position of the grid if there are no full columns
+  // or if we're printing on two pages
+  // specifically, we want to center it.
+  if (options.num_full_columns == 0 || options.num_pages == 2) {
+      grid_xpos = (doc_width - grid_width)/2;
+      notepad_xpos = doc_width/2;
+  }
+
+  // if there are no clues at all, center the y-position too
+  if (!xw.clues.length || options.num_pages == 2) {
+      grid_ypos = (doc_height - grid_height)/2;
+  }
+
+  // Determine how much space to set aside for the notepad
+  var notepad_height = 0;
+  if (options.show_notepad) {
+    var doc1 = new jsPDF(options.orientation, 'pt', 'letter');
+    const notepad_width = grid_width - 20;
+    doc1.setFontSize(options.notepad_min_pt);
+    var num_notepad_lines = doc1.splitTextToSize(xw.metadata.description, notepad_width).length;
+
+    doc1.setFontType('italic');
+    var notepad_pt = options.notepad_max_pt;
+    doc1.setFontSize(notepad_pt);
+    var notepad_lines = doc1.splitTextToSize(xw.metadata.description, notepad_width);
+    while (notepad_lines.length > num_notepad_lines) {
+      notepad_pt -= 0.2;
+      doc1.setFontSize(notepad_pt);
+      notepad_lines = doc1.splitTextToSize(xw.metadata.description, notepad_width);
+    }
+    var notepad_adj = (num_notepad_lines > 1 ? 1.1 : 1.2);
+    notepad_height = num_notepad_lines * notepad_pt * notepad_adj;
+  }
+  grid_ypos -= notepad_height;
+
+  // Set the cell size
+  var cell_size = grid_width / xw.metadata.width;
+
+  myObj = {
+    grid_xpos: grid_xpos
+  , grid_ypos: grid_ypos
+  , grid_width: grid_width
+  , grid_height: grid_height
+  , col_width: col_width
+  , notepad_height: notepad_height
+  , notepad_pt: notepad_pt
+  , cell_size: cell_size
+  , notepad_lines: notepad_lines
+  , notepad_xpos: notepad_xpos
+  , notepad_ypos: notepad_ypos
+  }
+  return myObj;
+}
+
+/** Create a PDF (requires jsPDF) **/
 function jscrossword_to_pdf(xw, options={}) {
     var DEFAULT_OPTIONS = {
         margin: 40
@@ -329,7 +570,7 @@ function jscrossword_to_pdf(xw, options={}) {
     ,   gray: null
     ,   under_title_spacing : 20
     ,   max_clue_pt : 14
-    ,   min_clue_pt : 5
+    ,   min_clue_pt : 8
     ,   grid_padding : 5
     ,   outfile : null
     ,   vertical_separator : 10
@@ -339,8 +580,15 @@ function jscrossword_to_pdf(xw, options={}) {
     ,   notepad_min_pt: 8
     ,   orientation: 'portrait'
     ,   header1: '', header2: '', header3: ''
-    ,   max_cell_size: 24
+    ,   max_cell_size: 30
+    ,   min_cell_size: 16
+    ,   max_title_pt: 12
+    ,   max_columns: 5
+    ,   min_columns: 2
+    ,   min_grid_size: 240
     };
+
+    var clue_length = xw.clues.map(x=>x.clue).flat().map(x=>x.text).join('').length;
 
     for (var key in DEFAULT_OPTIONS) {
         if (!DEFAULT_OPTIONS.hasOwnProperty(key)) continue;
@@ -351,7 +599,7 @@ function jscrossword_to_pdf(xw, options={}) {
     }
 
     // Sorry big titles but we need a max size here
-    const MAX_TITLE_PT = 12;
+    const MAX_TITLE_PT = options.max_title_pt;
     if (options.title_pt > MAX_TITLE_PT) {options.title_pt = MAX_TITLE_PT;}
     if (options.copyright_pt > MAX_TITLE_PT) {options.copyright_pt = MAX_TITLE_PT;}
 
@@ -360,8 +608,8 @@ function jscrossword_to_pdf(xw, options={}) {
     var PTS_PER_IN = 72;
     var DOC_WIDTH = 8.5 * PTS_PER_IN;
     var DOC_HEIGHT = 11 * PTS_PER_IN;
-    // acrostics always get printed in landscape
-    if (options.orientation == 'landscape' || xw.metadata.crossword_type == 'acrostic') {
+    // wide puzzles get printed in landscape
+    if (options.orientation == 'landscape' || xw.metadata.width >= 30) {
       DOC_WIDTH = 11 * PTS_PER_IN;
       DOC_HEIGHT = 8.5 * PTS_PER_IN;
       options.orientation = 'landscape';
@@ -382,13 +630,6 @@ function jscrossword_to_pdf(xw, options={}) {
     // variables used in for loops
     var i, j;
 
-    // helper value for multiplying
-    var show_notepad_int = options.show_notepad ? 1 : 0;
-
-    // Reserve spot for the notepad
-    var notepad_ypos = DOC_HEIGHT - margin - MAX_TITLE_PT - options.vertical_separator * 2;
-    var notepad_xpos;
-
     // If options.gray is NULL, we determine it
     if (options.gray === null) {
       options.gray = 0.5; // default
@@ -399,68 +640,36 @@ function jscrossword_to_pdf(xw, options={}) {
       }
     }
 
-    console.log(options.gray);
-
     // If options.num_columns is null, we determine it ourselves
+    var possibleColumns = [];
     if (options.num_columns === null || options.num_full_columns === null)
     {
-        var word_count = xw.words.length;
-        var clue_length = xw.clues.map(x=>x.clue).flat().map(x=>x.text).join('').length;
-        //console.log(clue_length);
-
-        // we handle acrostics separately
-        if (xw.metadata.crossword_type == 'acrostic') {
-          var cell_count = xw.cells.map(x=>x.solution).filter(Boolean).length;
-          if (cell_count > 600 || clue_length > 1500) { // two pages
-            options.num_pages = 2;
-          // small acrostics are handled separately
-          } else if (xw_height <= 15) {
-            options.num_columns = 3;
-            console.log(options.num_columns);
-            options.num_full_columns = 0;
-          } else {
-            options.num_columns = 4;
-            options.num_full_columns = 1;
+      // special logic for two pages
+      if (options.num_pages == 2) {
+        var numCols = Math.min(Math.ceil(clue_length/800), 5);
+        options.num_columns = numCols;
+        options.num_full_columns = numCols;
+        possibleColumns.push({num_columns: numCols, num_full_columns: numCols});
+      } else {
+        for (var nc = options.min_columns; nc <= options.max_columns; nc++) {
+          for (var fc = 0; fc <= nc - 1; fc++) {
+            // make the grid and check the cell size
+            options.num_columns = nc;
+            options.num_full_columns = fc;
+            var gp = grid_props(xw, options, DOC_WIDTH, DOC_HEIGHT);
+            // we ignore "min_grid_size" for now
+            if (gp.cell_size >= options.min_cell_size) {
+              possibleColumns.push({num_columns: nc, num_full_columns: fc});
+            }
           }
         }
-        else if (xw_height > 2 * xw_width) {
-            options.num_columns = 5;
-            options.num_full_columns = 3;
-        }
-        // handle puzzles with very few words
-        // max 5 columns
-        else if (clue_length <= 1000) {
-            options.num_columns = Math.min(Math.ceil(clue_length/350), 5);
-            options.num_full_columns = 0;
-        }
-        else if (xw_height >= 17) {
-            options.num_columns = 5;
-            options.num_full_columns = 2;
-        }
-        else if (xw_width > 17) {
-            options.num_columns = 4;
-            options.num_full_columns = 1;
-        }
-        else if (clue_length >= 1600) {
-            options.num_columns = 5;
-            options.num_full_columns = 2;
-        }
-        else {
-            options.num_columns = 3;
-            options.num_full_columns = 1;
-        }
-
-        // special logic for two pages
-        if (options.num_pages == 2) {
-          var numCols = Math.min(Math.ceil(clue_length/800), 5);
-          options.num_columns = numCols;
-          options.num_full_columns = numCols;
-        }
+      }
+    } else {
+      possibleColumns = [{num_columns: options.num_columns, num_full_columns: options.num_full_columns}];
     }
 
     // The maximum font size of title and author
     var max_title_author_pt = MAX_TITLE_PT;
-
     var doc;
 
     // create the clue strings and clue arrays
@@ -497,200 +706,73 @@ function jscrossword_to_pdf(xw, options={}) {
         num_arrays.push(these_nums);
     }
 
-    // size of columns
-    var col_width = (DOC_WIDTH - 2 * margin - (options.num_columns -1 ) * options.column_padding) / options.num_columns;
-
-    // The grid is under all but the first few columns
-    var grid_width = DOC_WIDTH - 2 * margin - options.num_full_columns * (col_width + options.column_padding);
-    var grid_height = (grid_width / xw_width) * xw_height;
-
-    // We change the grid width and height if num_full_columns == 0
-    // This is because we don't want it to take up too much space
-    if (options.num_full_columns === 0 || options.num_pages == 2) {
-        // set the height to be (about) half of the available area
-        grid_height = DOC_HEIGHT * 4/9;
-        // If there are very few clues we can increase the grid height
-        if (xw.clues.length < 10) {
-          grid_height = DOC_HEIGHT * 2/3;
-        }
-        if (options.num_pages == 2) {
-          grid_height = DOC_HEIGHT - (2 * margin + 3 * MAX_TITLE_PT + 4 * options.vertical_separator + 3 * options.notepad_max_pt);
-        }
-        grid_width = (grid_height / xw_height) * xw_width;
-        // however! if this is bigger than allowable, re-calibrate
-        if (grid_width > (DOC_WIDTH - 2 * margin)) {
-            grid_width = (DOC_WIDTH - 2 * margin);
-            grid_height = (grid_width / xw_width) * xw_height;
-        }
-
-        // we shouldn't let the squares get too big
-        var cell_size = grid_width / xw_width;
-        if (cell_size > options.max_cell_size) {
-          cell_size = options.max_cell_size;
-          grid_height = cell_size * xw_height;
-          grid_width = cell_size * xw_width;
-        }
-    }
-
-    // x and y position of grid
-    var notepad_height = 0;
-    var grid_xpos = DOC_WIDTH - margin - grid_width;
-    var grid_ypos = notepad_ypos - show_notepad_int * (options.vertical_separator + notepad_height) - grid_height;
-
-    var notepad_xpos = DOC_WIDTH - margin - grid_width/2;
-
-    // we change the x position of the grid if there are no full columns
-    // or if we're printing on two pages
-    // specifically, we want to center it.
-    if (options.num_full_columns == 0 || options.num_pages == 2) {
-        grid_xpos = (DOC_WIDTH - grid_width)/2;
-        notepad_xpos = DOC_WIDTH/2;
-    }
-
-    // if there are no clues at all, center the y-position too
-    if (!xw.clues.length || options.num_pages == 2) {
-        grid_ypos = (DOC_HEIGHT - grid_height)/2;
-        console.log(grid_ypos);
-        console.log(grid_height);
-    }
-
-    // Determine how much space to set aside for the notepad
-    var notepad_height = 0;
-    if (options.show_notepad) {
-      var doc1 = new jsPDF(options.orientation, 'pt', 'letter');
-      const notepad_width = grid_width - 20;
-      doc1.setFontSize(options.notepad_min_pt);
-      var num_notepad_lines = doc1.splitTextToSize(xw.metadata.description, notepad_width).length;
-
-      doc1.setFontType('italic');
-      var notepad_pt = options.notepad_max_pt;
-      doc1.setFontSize(notepad_pt);
-      var notepad_lines = doc1.splitTextToSize(xw.metadata.description, notepad_width);
-      while (notepad_lines.length > num_notepad_lines) {
-        notepad_pt -= 0.2;
-        doc1.setFontSize(notepad_pt);
-        notepad_lines = doc1.splitTextToSize(xw.metadata.description, notepad_width);
-      }
-      var notepad_adj = (num_notepad_lines > 1 ? 1.1 : 1.2);
-      notepad_height = num_notepad_lines * notepad_pt * notepad_adj;
-      //console.log(notepad_pt);
-    }
-    grid_ypos -= notepad_height;
-
-    // If there is no header 1 / header 2 we can save some space
-    var has_top_header_row = 1;
-    if (!options.header1 && !options.header2) {
-      has_top_header_row = 0;
-    }
-
     // Loop through and write to PDF if we find a good fit
     // Find an appropriate font size
     // don't do this if there are no clues
     doc = new jsPDF(options.orientation, 'pt', 'letter');
+    var possibleDocs = [];
     if (xw.clues.length) {
-      var clue_pt = options.max_clue_pt;
-      var finding_font = true;
-      while (finding_font)
-      {
-          doc = new jsPDF(options.orientation, 'pt', 'letter');
-          var clue_padding = clue_pt / 3;
-          doc.setFontSize(clue_pt);
+      possibleColumns.forEach(function(pc) {
+        options.num_columns = pc.num_columns;
+        options.num_full_columns = pc.num_full_columns;
+        var gridProps = grid_props(xw, options, DOC_WIDTH, DOC_HEIGHT);
+        docObj = doc_with_clues(xw, options, DOC_WIDTH, DOC_HEIGHT, clue_arrays, num_arrays, gridProps);
+        if (docObj.clue_pt) {
+          possibleDocs.push({docObj: docObj, gridProps: gridProps, columns: pc});
+        }
+      });
+    } else {
+      var gridProps = grid_props(xw, options, DOC_WIDTH, DOC_HEIGHT);
+      docObj = doc_with_clues(xw, options, DOC_WIDTH, DOC_HEIGHT, clue_arrays, num_arrays, gridProps);
+      possibleDocs.push({docObj: docObj, gridProps: gridProps, columns: {}});
+    }
 
-          doc.setLineWidth(options.line_width);
+    // If there are no possibilities here go to two pages
+    if (possibleDocs.length == 0) {
+      var numCols = Math.min(Math.ceil(clue_length/800), 5);
+      options.num_columns = numCols;
+      options.num_full_columns = numCols;
+      options.num_pages = 2;
+      var gridProps = grid_props(xw, options, DOC_WIDTH, DOC_HEIGHT);
+      docObj = doc_with_clues(xw, options, DOC_WIDTH, DOC_HEIGHT, clue_arrays, num_arrays, gridProps);
+      var pc = {num_columns: numCols, num_full_columns: numCols};
+      possibleDocs.push({docObj: docObj, gridProps: gridProps, columns: pc});
+    }
 
-          // Print the clues
-          // We set the margin to be the maximum length of the clue numbers
-          var max_clue_num_length = xw.clues.map(x=>x.clue).flat().map(x=>x.number).map(x => x.length).reduce((a, b) => Math.max(a, b));
-          var num_margin = doc.getTextWidth('9'.repeat(max_clue_num_length));
-          var num_xpos = margin + num_margin;
-          var line_margin = 1.5 * doc.getTextWidth(' ');
-          var line_xpos = num_xpos + line_margin;
-          var top_line_ypos = margin + // top margin
-                      has_top_header_row * (max_title_author_pt + options.vertical_separator) + // headers 1 & 2
-                      max_title_author_pt + // title + header 3
-                      options.vertical_separator * 2 + // padding
-                      clue_pt + clue_padding; // first clue
-          var line_ypos = top_line_ypos;
-          var my_column = 0;
-          for (var k=0; k<clue_arrays.length; k++) {
-              var clues = clue_arrays[k];
-              var nums = num_arrays[k];
-              for (var i=0; i<clues.length; i++) {
-                  var clue = clues[i];
-                  var num = nums[i];
+    // How do we pick from among these options?
+    // we need an objective function
+    // let's say we want things as big as possible?
+    var selectedDoc;
+    var obj_val = 1000.;
+    const ideal_clue_pt = 11.5;
+    //const ideal_cell_size = (options.max_cell_size + options.max_cell_size)/2.;
+    // ideal grid area is about 1/4 the page area
+    const ideal_grid_area = DOC_WIDTH * DOC_HEIGHT * 0.25;
+    possibleDocs.forEach(function (pd) {
+      //var thisVal = pd.gridProps.cell_size/options.max_cell_size + pd.docObj.clue_pt/options.max_clue_pt;
+      //var thisVal = (pd.gridProps.cell_size - ideal_cell_size)**2 + (pd.docObj.clue_pt - ideal_clue_pt)**2;
 
-                  // check to see if we need to wrap
-                  var max_line_ypos;
-                  if (my_column < options.num_full_columns) {
-                      max_line_ypos = DOC_HEIGHT - margin - MAX_TITLE_PT - 2 * options.vertical_separator;
-                  } else {
-                      max_line_ypos = grid_ypos - options.grid_padding;
-                  }
-
-                  // Split our clue
-                  var lines = split_text_to_size_bi(clue, col_width - (num_margin + line_margin), doc, i==0);
-
-                  if (line_ypos + (lines.length - 1) * (clue_pt + clue_padding) > max_line_ypos) {
-                      // move to new column
-                      my_column += 1;
-                      num_xpos = margin + num_margin + my_column * (col_width + options.column_padding);
-                      line_xpos = num_xpos + line_margin;
-                      line_ypos = top_line_ypos;
-                      // if we're at the top of a line we don't print a blank clue
-                      if (clue == '') {
-                          continue;
-                      }
-                  }
-
-
-                  for (var j=0; j<lines.length; j++)
-                  {
-                      var line = lines[j];
-                      //console.log(i, j, k, line);
-                      // Set the font to bold for the title
-                      if (i==0 && j==0) {
-                          doc.setFontType('bold');
-                          printCharacters(doc, line, line_ypos, line_xpos, clue_pt);
-                          doc.setFontType('normal');
-                          // add a little space after the header
-                          line_ypos += clue_padding;
-                      } else {
-                          if (j == 0 || (i==0 && j==1)) {
-                            // When j == 0 we print the number
-                            doc.setFontType('bold');
-                            doc.text(num_xpos, line_ypos, num, null, null, "right");
-                            doc.setFontType('normal');
-                          }
-                          // Print the clue
-                          doc.setFontType('normal');
-                          // print the text
-                          //doc.text(line_xpos,line_ypos,line);
-                          printCharacters(doc, line, line_ypos, line_xpos, clue_pt);
-                      }
-                      // set the y position for the next line
-                      line_ypos += clue_pt + clue_padding;
-                  }
-                  // Add a little extra space in between clues
-                  line_ypos += clue_padding;
-              }
-          }
-
-          // let's not let the font get ridiculously tiny
-          if (clue_pt == options.min_clue_pt)
-          {
-              finding_font = false;
-          }
-          else if (my_column > options.num_columns - 1)
-          {
-              clue_pt -= 0.1;
-          }
-          else
-          {
-              finding_font = false;
-          }
+      var thisGridArea = pd.gridProps.grid_width * pd.gridProps.grid_height;
+      // we want the clue point and grid area to be mostly ideal
+      var thisVal =  ((thisGridArea - ideal_grid_area)/ideal_grid_area)**2 + ((pd.docObj.clue_pt - ideal_clue_pt)/ideal_clue_pt)**2;
+      if (thisVal < obj_val) {
+        obj_val = thisVal;
+        selectedDoc = pd;
       }
-    } // END if clues
+    });
 
+    doc = selectedDoc.docObj.doc;
+    var gridProps = selectedDoc.gridProps;
+    var grid_xpos = gridProps.grid_xpos
+    var grid_ypos = gridProps.grid_ypos;
+    var grid_width = gridProps.grid_width;
+    var grid_height = gridProps.grid_height;
+    var notepad_height = gridProps.notepad_height;
+    var notepad_pt = gridProps.notepad_pt;
+    var cell_size = gridProps.cell_size;
+    var notepad_lines = gridProps.notepad_lines;
+    var notepad_xpos = gridProps.notepad_xpos;
+    var notepad_ypos = gridProps.notepad_ypos;
 
     /***********************/
 
@@ -748,8 +830,6 @@ function jscrossword_to_pdf(xw, options={}) {
         doc.text(title_xpos, title_author_ypos, options.header1);
         doc.text(right_xpos, title_author_ypos, options.header2, null, null, 'right');
         title_author_ypos += max_title_author_pt + options.vertical_separator;
-        console.log(max_title_author_pt);
-        console.log(options.vertical_separator);
       }
 
       //title
