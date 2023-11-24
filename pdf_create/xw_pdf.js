@@ -739,9 +739,6 @@ function jscrossword_to_pdf(xw, options={}) {
       possibleDocs.push({docObj: docObj, gridProps: gridProps, columns: pc});
     }
 
-
-    console.log(possibleDocs);
-
     // How do we pick from among these options?
     // we need an objective function
     // let's say we want things as big as possible?
@@ -758,14 +755,11 @@ function jscrossword_to_pdf(xw, options={}) {
       var thisGridArea = pd.gridProps.grid_width * pd.gridProps.grid_height;
       // we want the clue point and grid area to be mostly ideal
       var thisVal =  ((thisGridArea - ideal_grid_area)/ideal_grid_area)**2 + ((pd.docObj.clue_pt - ideal_clue_pt)/ideal_clue_pt)**2;
-      console.log(thisVal);
       if (thisVal < obj_val) {
         obj_val = thisVal;
         selectedDoc = pd;
       }
     });
-
-    console.log(selectedDoc);
 
     doc = selectedDoc.docObj.doc;
     var gridProps = selectedDoc.gridProps;
