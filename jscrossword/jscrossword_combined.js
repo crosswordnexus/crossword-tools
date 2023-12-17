@@ -1240,10 +1240,19 @@ var ActiveXObject, parsedPuz, filecontents, PUZAPP = {};
         }
     }
 
+    const WINDOWS_1252 = [ '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07', '\x08', '\x09', '\x0A', '\x0B', '\x0C', '\x0D', '\x0E', '\x0F', '\x10', '\x11', '\x12', '\x13', '\x14', '\x15', '\x16', '\x17', '\x18', '\x19', '\x1A', '\x1B', '\x1C', '\x1D', '\x1E', '\x1F', ' ', '!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', ']', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '|', '}', '~', '\x7F', '\u20AC', '\x81', '\u201A', '\x83', '\u201E', '\u2026', '\u2020', '\u2021', '\x88', '\u2030', '\x8A', '\u2039', '\x8C', '\x8D', '\x8E', '\x8F', '\x90', '\u2018', '\u2019', '\u201C', '\u201D', '\u2022', '\u2013', '\u2014', '\x98', '\u2122', '\x9A', '\u203A', '\x9C', '\x9D', '\x9E', '\x9F', '\xA0', '\xA1', '\xA2', '\xA3', '\xA4', '\xA5', '\xA6', '\xA7', '\xA8', '\xA9', '\xAA', '\xAB', '\xAC', '\xAD', '\xAE', '\xAF', '\xB0', '\xB1', '\xB2', '\xB3', '\xB4', '\xB5', '\xB6', '\xB7', '\xB8', '\xB9', '\xBA', '\xBB', '\xBC', '\xBD', '\xBE', '\xBF', '\xC2\x80', '\xC2\x81', '\xC2\x82', '\xC2\x83', '\xC2\x84', '\xC2\x85', '\xC2\x86', '\xC2\x87', '\xC2\x88', '\xC2\x89', '\xC2\x8A', '\xC2\x8B', '\xC2\x8C', '\xC2\x8D', '\xC2\x8E', '\xC2\x8F', '\xC2\x90', '\xC2\x91', '\xC2\x92', '\xC2\x93', '\xC2\x94', '\xC2\x95', '\xC2\x96', '\xC2\x97', '\xC2\x98', '\xC2\x99', '\xC2\x9A', '\xC2\x9B', '\xC2\x9C', '\xC2\x9D', '\xC2\x9E', '\xC2\x9F' ];
+    function fromWindows1252(binaryString) {
+        var text = '';
+        for (var i = 0; i < binaryString.length; i++) {
+            text += WINDOWS_1252[binaryString.charCodeAt(i)];
+        }
+        return text;
+    }
+
     // Conditionally convert to UTF-8 (based on .puz version)
     function StringConverter(version) {
-        if (version.startsWith('1.')) { // iso-8859-1
-            return function(x) {return x;}
+        if (version.startsWith('1.')) { // windows-1252
+            return function(x) {return fromWindows1252(x);}
         }
         else {
             return function(x) {return BinaryStringToUTF8String(x);}
