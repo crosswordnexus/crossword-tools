@@ -24,6 +24,8 @@
   </textarea>
 </div>
 
+<div id="test"></div>
+
 <script type="text/javascript">
 function show_hide(elt) {
   if(document.getElementById(elt).style.display=='none') {
@@ -65,6 +67,8 @@ function handleFileSelect(evt) {
 
                     //var ipuz_str = xw.toIpuzString();
                     //file_download(ipuz_str, 'test.ipuz', 'text/plain');
+
+                    //document.getElementById('test').innerHTML = JSON.stringify(window.jsxw);
                 };
             })(f);
             r.readAsBinaryString(f);
