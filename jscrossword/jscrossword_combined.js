@@ -167,7 +167,8 @@ function xw_read_ipuz(data) {
         'width': width,
         'crossword_type': crossword_type,
         'fakeclues': data.fakeclues || false,
-        'word_locations': Boolean(data.words)
+        'word_locations': Boolean(data.words),
+        'completion_message': data.explanation || null
     };
 
     /*
