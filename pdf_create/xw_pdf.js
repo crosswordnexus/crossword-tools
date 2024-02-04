@@ -650,7 +650,7 @@ function jscrossword_to_pdf(xw, options={}) {
     if (options.num_columns === null || options.num_full_columns === null)
     {
       // special logic for two pages
-      if (options.num_pages == 2) {
+      if (options.num_pages == 2 || !xw.clues.length) {
         var numCols = Math.min(Math.ceil(clue_length/800), 5);
         options.num_columns = numCols;
         options.num_full_columns = numCols;
