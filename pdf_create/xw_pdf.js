@@ -489,6 +489,11 @@ function grid_props(xw, options, doc_width, doc_height) {
       }
   }
 
+  // We don't show the notepad if there isn't one
+  if (!xw.metadata.description) {
+    options.show_notepad = false;
+  }
+
   // x and y position of grid
   // Reserve spot for the notepad
   var notepad_ypos = doc_height - options.margin - options.max_title_pt - options.vertical_separator * 2;
