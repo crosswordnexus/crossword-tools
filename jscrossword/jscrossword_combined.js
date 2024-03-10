@@ -579,6 +579,7 @@ function xw_read_jpz(data1) {
     var copyright = jpz_metadata[0].getElementsByTagName('copyright');
     var description = jpz_metadata[0].getElementsByTagName('description');
     var fakeclues = Boolean(jpz_metadata[0].getElementsByTagName('fakeclues').length);
+    var intro = puzzle[0].getElementsByTagName('instructions');
 
     if (title.length) {
         metadata['title'] = XMLElementToString(title[0]);
@@ -591,6 +592,14 @@ function xw_read_jpz(data1) {
     }
     if (description.length) {
         metadata['description'] = XMLElementToString(description[0]);
+    }
+    if (intro.length) {
+        metadata['intro'] = XMLElementToString(intro[0]);
+    }
+
+    // add the "intro" to the notepad if there isn't a notepad
+    if (metadata['intro'] && !metadata['description']) {
+      metadata['description'] = metadata['intro'];
     }
 
     metadata['fakeclues'] = fakeclues;
