@@ -317,7 +317,7 @@ function draw_crossword_grid(doc, xw, options)
 /**
 * Helper function to make a grid with clues
 **/
-function doc_with_clues(xw, options, doc_width, doc_height, clue_arrays, num_arrays, gridProps) {
+function doc_with_clues(xw, options, doc_width, doc_height, clue_arrays, num_arrays, gridProps, columnsPreSet=false) {
   var clue_pt = options.max_clue_pt;
   var finding_font = true;
 
@@ -341,7 +341,7 @@ function doc_with_clues(xw, options, doc_width, doc_height, clue_arrays, num_arr
   while (finding_font)
   {
       doc = new jsPDF(options.orientation, 'pt', 'letter');
-      var clue_padding = clue_pt / 3;
+      var clue_padding = clue_pt / options.clue_padding_denominator;
       doc.setFontSize(clue_pt);
 
       doc.setLineWidth(options.line_width);
@@ -424,7 +424,7 @@ function doc_with_clues(xw, options, doc_width, doc_height, clue_arrays, num_arr
 
       // let's not let the font get ridiculously tiny
       // ignore this option if we have two pages
-      if (clue_pt < options.min_clue_pt && options.num_pages < 2)
+      if (clue_pt < options.min_clue_pt && options.num_pages < 2 && !columnsPreSet)
       {
           finding_font = false;
           clue_pt = null;
@@ -591,6 +591,7 @@ function jscrossword_to_pdf(xw, options={}) {
     ,   max_columns: 5
     ,   min_columns: 2
     ,   min_grid_size: 240
+    ,   clue_padding_denominator: 3
     };
 
     var clue_length = xw.clues.map(x=>x.clue).flat().map(x=>x.text).join('').length;
@@ -647,6 +648,7 @@ function jscrossword_to_pdf(xw, options={}) {
 
     // If options.num_columns is null, we determine it ourselves
     var possibleColumns = [];
+    var columnsPreSet = false;
     if (options.num_columns === null || options.num_full_columns === null)
     {
       // special logic for two pages
@@ -670,6 +672,7 @@ function jscrossword_to_pdf(xw, options={}) {
         }
       }
     } else {
+      columnsPreSet = true;
       possibleColumns = [{num_columns: options.num_columns, num_full_columns: options.num_full_columns}];
     }
 
@@ -721,7 +724,7 @@ function jscrossword_to_pdf(xw, options={}) {
         options.num_columns = pc.num_columns;
         options.num_full_columns = pc.num_full_columns;
         var gridProps = grid_props(xw, options, DOC_WIDTH, DOC_HEIGHT);
-        docObj = doc_with_clues(xw, options, DOC_WIDTH, DOC_HEIGHT, clue_arrays, num_arrays, gridProps);
+        docObj = doc_with_clues(xw, options, DOC_WIDTH, DOC_HEIGHT, clue_arrays, num_arrays, gridProps, columnsPreSet);
         if (docObj.clue_pt) {
           possibleDocs.push({docObj: docObj, gridProps: gridProps, columns: pc});
         }
