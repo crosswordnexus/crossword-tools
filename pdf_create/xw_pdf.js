@@ -586,7 +586,7 @@ function jscrossword_to_pdf(xw, options={}) {
     ,   orientation: 'portrait'
     ,   header1: '', header2: '', header3: ''
     ,   max_cell_size: 30
-    ,   min_cell_size: 16
+    ,   min_cell_size: 15
     ,   max_title_pt: 12
     ,   max_columns: 5
     ,   min_columns: 2
