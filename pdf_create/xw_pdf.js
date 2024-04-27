@@ -763,7 +763,11 @@ function jscrossword_to_pdf(xw, options={}) {
       var thisGridArea = pd.gridProps.grid_width * pd.gridProps.grid_height;
       // we want the clue point and grid area to be mostly ideal
       // we add a slight penalty for more columns (in general, less is better if it's close)
-      var thisVal =  ((thisGridArea - ideal_grid_area)/ideal_grid_area)**2 + ((pd.docObj.clue_pt - ideal_clue_pt)/ideal_clue_pt)**2 + pd.columns.num_columns/500;
+      console.log(pd.columns.num_columns);
+      var thisVal = ((thisGridArea - ideal_grid_area)/ideal_grid_area)**2 + ((pd.docObj.clue_pt - ideal_clue_pt)/ideal_clue_pt)**2;
+      if (pd.columns.num_columns) {
+        thisVal += pd.columns.num_columns/500;
+      }
       console.log(pd); console.log(thisVal);
       if (thisVal < obj_val) {
         obj_val = thisVal;
