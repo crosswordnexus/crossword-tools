@@ -1,3 +1,6 @@
+// Load jsPDF
+const { jsPDF } = window.jspdf;
+
 /** Helper functions for splitting text with tags **/
 // function to traverse DOM tree
 function traverseTree(htmlDoc, agg=[]) {
@@ -38,13 +41,13 @@ const printCharacters = (doc, textObject, startY, startX, fontSize) => {
     else {
         textObject.map(row => {
             if (row.is_bold) {
-                doc.setFontType('bold');
+                doc.setFont(options.font_type, 'bold');
             }
             else if (row.is_italic) {
-                doc.setFontType('italic');
+                doc.setFont(options.font_type, 'italic');
             }
             else {
-                doc.setFontType('normal');
+                doc.setFont(options.font_type, 'normal');
             }
 
             // Some characters don't render properly in PDFs
@@ -53,7 +56,7 @@ const printCharacters = (doc, textObject, startY, startX, fontSize) => {
             mychar = ASCIIFolder.foldReplacing(mychar, '*');
             doc.text(mychar, startX, startY);
             startX = startX + doc.getStringUnitWidth(row.char) * fontSize;
-            doc.setFontType('normal');
+            doc.setFont(options.font_type, 'normal');
         });
     }
 };
@@ -96,9 +99,9 @@ function split_text_to_size_bi(clue, col_width, doc, has_header=false) {
     var split_clue = traverseTree(htmlDoc);
 
     // Make a new "lines1" with all bold splits
-    doc.setFontType('bold');
+    doc.setFont(options.font_type, 'bold');
     lines1 = doc.splitTextToSize(clean_clue, col_width);
-    doc.setFontType('normal');
+    doc.setFont(options.font_type, 'normal');
 
     // split this like we did the "lines1"
     var lines = [];
@@ -163,6 +166,16 @@ function draw_crossword_grid(doc, xw, options)
         }
     }
 
+    //console.log(options);
+
+    // If there's an image, draw it and return
+    if (options.image) {
+      doc.addImage(options.image, "PNG", options.x0, options.y0, xw.metadata.width * options.cell_size, xw.metadata.height * options.cell_size);
+      console.log(1);
+      //doc.addImage(options.image, 0, 0, xw.metadata.width * options.cell_size, xw.metadata.height * options.cell_size);
+      return;
+    }
+
     var PTS_TO_IN = 72;
     var cell_size = options.cell_size;
 
@@ -190,7 +203,7 @@ function draw_crossword_grid(doc, xw, options)
 
         var MIN_NUMBER_SIZE = 4;
 
-        var filled_string = (filled ? 'F' : '');
+        var filled_string = (filled ? 'F' : 'S');
         var number_offset = cell_size/20;
         var number_size = cell_size/3.5 < MIN_NUMBER_SIZE ? MIN_NUMBER_SIZE : cell_size/3.5;
         //var letter_size = cell_size/1.5;
@@ -212,19 +225,19 @@ function draw_crossword_grid(doc, xw, options)
             doc.setDrawColor(options.gray.toString());
             // Draw one filled square and then one unfilled
             doc.rect(x1, y1, cell_size, cell_size, filled_string);
-            doc.rect(x1, y1, cell_size, cell_size, '');
+            doc.rect(x1, y1, cell_size, cell_size);
         }
         else {
             doc.setFillColor(options.gray.toString());
             doc.setDrawColor(options.gray.toString());
             // draw the bounding box for all squares -- even "clue" squares
             if (true) {
-                doc.rect(x1, y1, cell_size, cell_size, '');
+                doc.rect(x1, y1, cell_size, cell_size);
                 doc.rect(x1, y1, cell_size, cell_size, filled_string);
             }
         }
         //numbers
-        doc.setFontType('normal');
+        doc.setFont(options.font_type, 'normal');
         doc.setFontSize(number_size);
         doc.text(x1+number_offset,y1+number_size,number);
 
@@ -234,7 +247,7 @@ function draw_crossword_grid(doc, xw, options)
         doc.text(x1 + cell_size - number_offset, y1 + number_size, top_right_number, null, null, 'right');
 
         // letters
-        doc.setFontType('normal');
+        doc.setFont(options.font_type, 'normal');
         doc.setFontSize(letter_size);
         doc.text(x1+cell_size/2,y1+cell_size * letter_pct_down,letter,null,null,'center');
 
@@ -396,20 +409,20 @@ function doc_with_clues(xw, options, doc_width, doc_height, clue_arrays, num_arr
                   var line = lines[j];
                   // Set the font to bold for the title
                   if (i==0 && j==0) {
-                      doc.setFontType('bold');
+                      doc.setFont(options.font_type, 'bold');
                       printCharacters(doc, line, line_ypos, line_xpos, clue_pt);
-                      doc.setFontType('normal');
+                      doc.setFont(options.font_type, 'normal');
                       // add a little space after the header
                       line_ypos += clue_padding;
                   } else {
                       if (j == 0 || (i==0 && j==1)) {
                         // When j == 0 we print the number
-                        doc.setFontType('bold');
+                        doc.setFont(options.font_type, 'bold');
                         doc.text(num_xpos, line_ypos, num, null, null, "right");
-                        doc.setFontType('normal');
+                        doc.setFont(options.font_type, 'normal');
                       }
                       // Print the clue
-                      doc.setFontType('normal');
+                      doc.setFont(options.font_type, 'normal');
                       // print the text
                       //doc.text(line_xpos,line_ypos,line);
                       printCharacters(doc, line, line_ypos, line_xpos, clue_pt);
@@ -529,7 +542,7 @@ function grid_props(xw, options, doc_width, doc_height) {
     doc1.setFontSize(options.notepad_min_pt);
     var num_notepad_lines = doc1.splitTextToSize(xw.metadata.description, notepad_width).length;
 
-    doc1.setFontType('italic');
+    doc1.setFont(options.font_type, 'italic');
     var notepad_pt = options.notepad_max_pt;
     doc1.setFontSize(notepad_pt);
     var notepad_lines = doc1.splitTextToSize(xw.metadata.description, notepad_width);
@@ -562,8 +575,38 @@ function grid_props(xw, options, doc_width, doc_height) {
   return myObj;
 }
 
-/** Create a PDF (requires jsPDF) **/
+/** Helper function to load an image and get its dimensions **/
+function loadImage(base64Image) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.width, height: img.height });
+        img.onerror = reject;
+        img.src = base64Image;
+    });
+}
+
+/** Create a PDF with possibly an image **/
 function jscrossword_to_pdf(xw, options={}) {
+  // If there's no image, just call the original routine
+  if (!options.image) {
+    jscrossword_to_pdf2(xw, options=options);
+  } else {
+    // load the image and then call the "2" routine
+    loadImage(options.image)
+    .then(dimensions => {
+      const xwWidth = 17;
+      xw.metadata.width = xwWidth;
+      xw.metadata.height = xwWidth * dimensions.height / dimensions.width;
+      jscrossword_to_pdf2(xw, options=options);
+    })
+    .catch(error => {
+        console.error('Failed to load image:', error);
+    });
+  }
+}
+
+/** Create a PDF (requires jsPDF) **/
+function jscrossword_to_pdf2(xw, options={}) {
     var DEFAULT_OPTIONS = {
         margin: 40
     ,   title_pt: null
@@ -592,6 +635,7 @@ function jscrossword_to_pdf(xw, options={}) {
     ,   min_columns: 2
     ,   min_grid_size: 240
     ,   clue_padding_denominator: 3
+    ,   font_type: 'helvetica'
     };
 
     var clue_length = xw.clues.map(x=>x.clue).flat().map(x=>x.text).join('').length;
@@ -763,12 +807,12 @@ function jscrossword_to_pdf(xw, options={}) {
       var thisGridArea = pd.gridProps.grid_width * pd.gridProps.grid_height;
       // we want the clue point and grid area to be mostly ideal
       // we add a slight penalty for more columns (in general, less is better if it's close)
-      console.log(pd.columns.num_columns);
+      //console.log(pd.columns.num_columns);
       var thisVal = ((thisGridArea - ideal_grid_area)/ideal_grid_area)**2 + ((pd.docObj.clue_pt - ideal_clue_pt)/ideal_clue_pt)**2;
       if (pd.columns.num_columns) {
         thisVal += pd.columns.num_columns/500;
       }
-      console.log(pd); console.log(thisVal);
+      //console.log(pd); console.log(thisVal);
       if (thisVal < obj_val) {
         obj_val = thisVal;
         selectedDoc = pd;
@@ -788,6 +832,23 @@ function jscrossword_to_pdf(xw, options={}) {
     var notepad_xpos = gridProps.notepad_xpos;
     var notepad_ypos = gridProps.notepad_ypos;
 
+    /* Draw grid */
+
+    var grid_options = {
+        grid_letters : false
+    ,   grid_numbers : true
+    ,   x0: grid_xpos
+    ,   y0: grid_ypos
+    ,   cell_size: grid_width / xw_width
+    ,   gray : options.gray
+    ,   image: options.image
+    };
+    draw_crossword_grid(doc, xw, grid_options);
+
+    if (options.num_pages == 2) {
+        doc.movePage(2,1);
+    }
+
     /***********************/
 
     // If title_pt is null, we determine it
@@ -800,7 +861,7 @@ function jscrossword_to_pdf(xw, options={}) {
         {
             var header1_header2 = options.header1 + 'ABCDEFGH' + options.header2;
             var title_header3 = xw.metadata.title + 'ABCDEFGH' + options.header3;
-            doc.setFontSize(options.title_pt).setFontType('bold');
+            doc.setFontSize(options.title_pt).setFont(options.font_type, 'bold');
             var lines1 = doc.splitTextToSize(header1_header2,DOC_WIDTH);
             var lines2 = doc.splitTextToSize(title_header3,DOC_WIDTH);
             if (lines1.length == 1 && lines2.length == 1) {
@@ -818,7 +879,7 @@ function jscrossword_to_pdf(xw, options={}) {
         while (finding_title_pt)
         {
             var author_copyright = xw.metadata.author + 'ABCDEFGH' + xw.metadata.copyright;
-            doc.setFontSize(options.copyright_pt).setFontType('normal');
+            doc.setFontSize(options.copyright_pt).setFont(options.font_type, 'normal');
             var lines1 = doc.splitTextToSize(author_copyright,DOC_WIDTH);
             if (lines1.length == 1) {
                 finding_title_pt = false;
@@ -840,7 +901,7 @@ function jscrossword_to_pdf(xw, options={}) {
 
       if (options.header1 || options.header2) {
         doc.setFontSize(options.title_pt);
-        doc.setFontType('bold');
+        doc.setFont(options.font_type, 'bold');
         doc.text(title_xpos, title_author_ypos, options.header1);
         doc.text(right_xpos, title_author_ypos, options.header2, null, null, 'right');
         title_author_ypos += max_title_author_pt + options.vertical_separator;
@@ -848,7 +909,7 @@ function jscrossword_to_pdf(xw, options={}) {
 
       //title
       doc.setFontSize(options.title_pt);
-      doc.setFontType('bold');
+      doc.setFont(options.font_type, 'bold');
       doc.text(title_xpos, title_author_ypos, xw.metadata.title);
       if (options.header3) {
         doc.text(right_xpos, title_author_ypos, options.header3, null, null, 'right');
@@ -864,14 +925,14 @@ function jscrossword_to_pdf(xw, options={}) {
       var copyright_xpos = DOC_WIDTH - margin;
       var copyright_ypos = DOC_HEIGHT - margin;
       doc.setFontSize(options.copyright_pt);
-      doc.setFontType('normal');
+      doc.setFont(options.font_type, 'normal');
       doc.text(copyright_xpos,copyright_ypos,xw.metadata.copyright,null,null,'right');
 
       /* Render author */
       var author_xpos = margin;
       var author_ypos = copyright_ypos;
       doc.setFontSize(options.copyright_pt);
-      doc.setFontType('normal');
+      doc.setFont(options.font_type, 'normal');
       doc.text(author_xpos,author_ypos,xw.metadata.author);
 
       /* Draw a line above the copyright */
@@ -882,7 +943,7 @@ function jscrossword_to_pdf(xw, options={}) {
 
       /* Render notepad */
       if (options.show_notepad && page == 1) {
-          doc.setFontType('italic');
+          doc.setFont(options.font_type, 'italic');
           doc.setFontSize(notepad_pt);
           // We can move notepad_ypos up a bit depending on notepad_pt
           //notepad_ypos = grid_ypos + grid_height + options.vertical_separator + (notepad.max_pt + notepad_pt)/2;
@@ -891,7 +952,7 @@ function jscrossword_to_pdf(xw, options={}) {
             doc.text(notepad_xpos, notepad_ypos, notepad1, null, null, 'center');
             notepad_ypos += notepad_pt;
           });
-          doc.setFontType('normal');
+          doc.setFont(options.font_type, 'normal');
 
           // Draw a rectangle around the notepad
           var notepad_rect_y = grid_ypos + grid_height + options.vertical_separator;
@@ -912,22 +973,6 @@ function jscrossword_to_pdf(xw, options={}) {
       renderHeaders(page=2);
       doc.addPage();
       renderHeaders(page=1);
-    }
-
-    /* Draw grid */
-
-    var grid_options = {
-        grid_letters : false
-    ,   grid_numbers : true
-    ,   x0: grid_xpos
-    ,   y0: grid_ypos
-    ,   cell_size: grid_width / xw_width
-    ,   gray : options.gray
-    };
-    draw_crossword_grid(doc, xw, grid_options);
-
-    if (options.num_pages == 2) {
-        doc.movePage(2,1);
     }
 
     doc.save(options.outfile);
