@@ -203,7 +203,7 @@ function draw_crossword_grid(doc, xw, options)
 
         var MIN_NUMBER_SIZE = 4;
 
-        var filled_string = (filled ? 'F' : '');
+        var filled_string = (filled ? 'F' : 'S');
         var number_offset = cell_size/20;
         var number_size = cell_size/3.5 < MIN_NUMBER_SIZE ? MIN_NUMBER_SIZE : cell_size/3.5;
         //var letter_size = cell_size/1.5;
@@ -225,14 +225,14 @@ function draw_crossword_grid(doc, xw, options)
             doc.setDrawColor(options.gray.toString());
             // Draw one filled square and then one unfilled
             doc.rect(x1, y1, cell_size, cell_size, filled_string);
-            doc.rect(x1, y1, cell_size, cell_size, '');
+            doc.rect(x1, y1, cell_size, cell_size);
         }
         else {
             doc.setFillColor(options.gray.toString());
             doc.setDrawColor(options.gray.toString());
             // draw the bounding box for all squares -- even "clue" squares
             if (true) {
-                doc.rect(x1, y1, cell_size, cell_size, '');
+                doc.rect(x1, y1, cell_size, cell_size);
                 doc.rect(x1, y1, cell_size, cell_size, filled_string);
             }
         }
