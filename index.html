@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta charset="UTF-8">
     <script src="jscrossword/jscrossword_combined.js"></script>
-    <script src="pdf_create/jspdf.min.js"></script>
+    <script src="pdf_create/jspdf-2_5_1.min.js"></script>
     <script src="pdf_create/xw_pdf.js"></script>
+    <script src="pdf_create/rg_functions.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
 </head>
 
 <body>
 
-<input type="file" id="files" name="files" accept=".puz,.xml,.jpz,.xpz,.ipuz,.cfp" />
+<input type="file" id="files" name="files" accept=".puz,.xml,.jpz,.xpz,.ipuz,.cfp,.rg" />
 
 <br /><br />
 <button title="Show/hide options (advanced)" type="button" onclick="show_hide('options_div')">Show/hide options (advanced)</button>
@@ -55,20 +57,17 @@ function handleFileSelect(evt) {
             r.onload = (function (theFile) {
                 return function (e) {
                     let contents = e.target.result;
-                    var xw_constructor = new JSCrossword();
-                    var xw;
-                    xw = xw_constructor.fromData(contents);
-                    console.log(xw);
-                    window.jsxw = xw;
-                    jscrossword_to_pdf(xw, options=options_obj);
-
-                    //var jpz_str = xw.toJPZString();
-                    //file_download(jpz_str, 'test.jpz', 'text/xml');
-
-                    //var ipuz_str = xw.toIpuzString();
-                    //file_download(ipuz_str, 'test.ipuz', 'text/plain');
-
-                    //document.getElementById('test').innerHTML = JSON.stringify(window.jsxw);
+                    // special logic for rows garden files
+                    if (f.name.endsWith('.rg')) {
+                      // we need to pass `binary=true` because we're reading as binary string below
+                      rgToPDF(contents, thorny=options_obj.thorny, binary=true);
+                    } else {
+                      const xw_constructor = new JSCrossword();
+                      const xw = xw_constructor.fromData(contents);
+                      console.log(xw);
+                      window.jsxw = xw;
+                      jscrossword_to_pdf(xw, options=options_obj);
+                    }
                 };
             })(f);
             r.readAsBinaryString(f);
