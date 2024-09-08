@@ -171,8 +171,6 @@ function draw_crossword_grid(doc, xw, options)
     // If there's an image, draw it and return
     if (options.image) {
       doc.addImage(options.image, "PNG", options.x0, options.y0, xw.metadata.width * options.cell_size, xw.metadata.height * options.cell_size);
-      console.log(1);
-      //doc.addImage(options.image, 0, 0, xw.metadata.width * options.cell_size, xw.metadata.height * options.cell_size);
       return;
     }
 
@@ -594,9 +592,16 @@ function jscrossword_to_pdf(xw, options={}) {
     // load the image and then call the "2" routine
     loadImage(options.image)
     .then(dimensions => {
-      const xwWidth = 17;
-      xw.metadata.width = xwWidth;
-      xw.metadata.height = xwWidth * dimensions.height / dimensions.width;
+      const minDimension = 17;
+      if (dimensions.width < dimensions.height) {
+        xw.metadata.width = minDimension;
+        xw.metadata.height = minDimension * dimensions.height / dimensions.width;
+      } else {
+        xw.metadata.height = minDimension;
+        xw.metadata.width = minDimension * dimensions.width / dimensions.height;
+      }
+      console.log(xw.metadata.width, xw.metadata.height);
+
       jscrossword_to_pdf2(xw, options=options);
     })
     .catch(error => {
@@ -732,7 +737,8 @@ function jscrossword_to_pdf2(xw, options={}) {
         var these_nums = [];
         for (i=0; i< xw.clues[j]['clue'].length; i++) {
             var e = xw.clues[j]['clue'][i];
-            var num = e.number;
+            // if no number, default to a bullet
+            var num = e.number || '•';
             var clue = e.text;
             // for acrostics, we don't print a clue without a "number"
             if (xw.metadata.crossword_type == 'acrostic' && !num) {

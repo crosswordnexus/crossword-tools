@@ -11,7 +11,7 @@
 
 <body>
 
-<input type="file" id="files" name="files" accept=".puz,.xml,.jpz,.xpz,.ipuz,.cfp,.rg" />
+<input type="file" id="files" name="files" accept=".puz,.xml,.jpz,.xpz,.ipuz,.cfp,.rg,.vpuz" />
 
 <br /><br />
 <button title="Show/hide options (advanced)" type="button" onclick="show_hide('options_div')">Show/hide options (advanced)</button>
@@ -57,17 +57,29 @@ function handleFileSelect(evt) {
             r.onload = (function (theFile) {
                 return function (e) {
                     let contents = e.target.result;
-                    // special logic for rows garden files
-                    if (f.name.endsWith('.rg')) {
-                      // we need to pass `binary=true` because we're reading as binary string below
-                      rgToPDF(contents, thorny=options_obj.thorny, binary=true);
-                    } else {
-                      const xw_constructor = new JSCrossword();
-                      const xw = xw_constructor.fromData(contents);
-                      console.log(xw);
-                      window.jsxw = xw;
-                      jscrossword_to_pdf(xw, options=options_obj);
+                    // convert to utf-8 string for certain use cases
+                    const utf8Str = binaryToUtf8(contents);
+                    // for vpuz files, extract the image and do some bookkeeping
+                    if (f.name.endsWith('.vpuz')) {
+                      const vpuzObj = JSON.parse(utf8Str);
+                      // add the image to options
+                      options_obj['image'] = vpuzObj['puzzle-image'];
+                      // add some fake iPuz data
+                      vpuzObj['kind'] = ["http://ipuz.org/crossword#1"];
+                      vpuzObj["dimensions"] = {"height": 3, "width": 3};
+                      vpuzObj["puzzle"] = [ ["#", "#", "#"], ["#", "#", "#"], ["#", "#", "#"] ];
+                      // set the contents to be this object
+                      contents = vpuzObj;
+                    } else if (f.name.endsWith('.rg')) {
+                      contents = rgToIpuz(utf8Str, thorny=options_obj.thorny);
+                      options_obj['image'] = RG_IMG; // from rg_functions.js
                     }
+                    // Create the PDF
+                    const xw_constructor = new JSCrossword();
+                    const xw = xw_constructor.fromData(contents);
+                    console.log(xw);
+                    window.jsxw = xw;
+                    jscrossword_to_pdf(xw, options=options_obj);
                 };
             })(f);
             r.readAsBinaryString(f);
@@ -77,6 +89,20 @@ function handleFileSelect(evt) {
     }
 }
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
+
+// Convert binary string to UTF-8 string
+function binaryToUtf8(binaryStr) {
+  // Convert binary string to byte array
+  const byteArray = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) {
+    byteArray[i] = binaryStr.charCodeAt(i);
+  }
+
+  // Decode byte array to UTF-8
+  const decoder = new TextDecoder('utf-8');
+  return decoder.decode(byteArray);
+}
+
 </script>
 
 </body>
