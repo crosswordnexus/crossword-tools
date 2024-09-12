@@ -69,7 +69,7 @@ function handleFileSelect(evt) {
             let options_obj = JSON.parse(document.getElementById('options_textarea').value);
             // add other options from dropdowns and such
             options_obj['thorny'] = document.getElementById('thorny_chk').checked;
-            options_obj['notepad'] = document.getElementById('show_notepad_chk').checked;
+            options_obj['show_notepad'] = document.getElementById('show_notepad_chk').checked;
             options_obj['num_columns'] = parseInt(document.getElementById('num_cols').value) || null;
             options_obj['num_full_columns'] = parseInt(document.getElementById('num_full_cols').value) || null;
             // define what happens when the file is loaded
