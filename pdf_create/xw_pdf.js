@@ -843,23 +843,6 @@ function jscrossword_to_pdf2(xw, options={}) {
     var notepad_xpos = gridProps.notepad_xpos;
     var notepad_ypos = gridProps.notepad_ypos;
 
-    /* Draw grid */
-
-    var grid_options = {
-        grid_letters : false
-    ,   grid_numbers : true
-    ,   x0: grid_xpos
-    ,   y0: grid_ypos
-    ,   cell_size: grid_width / xw_width
-    ,   gray : options.gray
-    ,   image: options.image
-    };
-    draw_crossword_grid(doc, xw, grid_options);
-
-    if (options.num_pages == 2) {
-        doc.movePage(2,1);
-    }
-
     /***********************/
 
     // If title_pt is null, we determine it
@@ -984,6 +967,23 @@ function jscrossword_to_pdf2(xw, options={}) {
       renderHeaders(page=2);
       doc.addPage();
       renderHeaders(page=1);
+    }
+
+    /* Draw grid */
+
+    var grid_options = {
+        grid_letters : false
+    ,   grid_numbers : true
+    ,   x0: grid_xpos
+    ,   y0: grid_ypos
+    ,   cell_size: grid_width / xw_width
+    ,   gray : options.gray
+    ,   image: options.image
+    };
+    draw_crossword_grid(doc, xw, grid_options);
+
+    if (options.num_pages == 2) {
+        doc.movePage(2,1);
     }
 
     doc.save(options.outfile);
