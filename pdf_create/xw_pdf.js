@@ -3,6 +3,9 @@ const { jsPDF } = window.jspdf;
 
 const DEFAULT_FONT_TYPE = 'helvetica';
 
+// default character to print when we don't have a number
+const DEFAULT_NUM = '•'
+
 /** Helper functions for splitting text with tags **/
 // function to traverse DOM tree
 function traverseTree(htmlDoc, agg=[]) {
@@ -740,10 +743,10 @@ function jscrossword_to_pdf2(xw, options={}) {
         for (i=0; i< xw.clues[j]['clue'].length; i++) {
             var e = xw.clues[j]['clue'][i];
             // if no number, default to a bullet
-            var num = e.number || '•';
+            var num = e.number || DEFAULT_NUM;
             var clue = e.text;
             // for acrostics, we don't print a clue without a "number"
-            if (xw.metadata.crossword_type == 'acrostic' && !num) {
+            if (xw.metadata.crossword_type == 'acrostic' && num == DEFAULT_NUM) {
                 continue;
             }
 
@@ -839,23 +842,6 @@ function jscrossword_to_pdf2(xw, options={}) {
     var notepad_lines = gridProps.notepad_lines;
     var notepad_xpos = gridProps.notepad_xpos;
     var notepad_ypos = gridProps.notepad_ypos;
-
-    /* Draw grid */
-
-    var grid_options = {
-        grid_letters : false
-    ,   grid_numbers : true
-    ,   x0: grid_xpos
-    ,   y0: grid_ypos
-    ,   cell_size: grid_width / xw_width
-    ,   gray : options.gray
-    ,   image: options.image
-    };
-    draw_crossword_grid(doc, xw, grid_options);
-
-    if (options.num_pages == 2) {
-        doc.movePage(2,1);
-    }
 
     /***********************/
 
@@ -983,182 +969,22 @@ function jscrossword_to_pdf2(xw, options={}) {
       renderHeaders(page=1);
     }
 
-    doc.save(options.outfile);
-}
+    /* Draw grid */
 
-/** Create a NYT submission (requires jsPDF) **/
-function jscrossword_to_nyt(xw, options={})
-{
-    var DEFAULT_OPTIONS = {
-        margin: 20
-    ,   grid_size : 360
-    ,   email : ''
-    ,   address : ''
-    ,   header_pt : 10
-    ,   grid_padding: 20
-    ,   footer_pt: 8
-    ,   clue_width : 250
-    ,   entry_left_padding: 150
-    ,   clue_entry_pt : 10
-    ,   outfile: null
-    ,   gray: 0.4
-    };
-
-    for (var key in DEFAULT_OPTIONS) {
-        if (!DEFAULT_OPTIONS.hasOwnProperty(key)) continue;
-        if (!options.hasOwnProperty(key))
-        {
-            options[key] = DEFAULT_OPTIONS[key];
-        }
-    }
-
-    var xw_height = xw.metadata.height;
-    var xw_width = xw.metadata.width;
-
-    // If there's no filename, use the title
-    if (!options.outfile) {
-        var outname = xw.metadata.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '_nyt.pdf';
-        options.outfile = outname;
-    }
-
-    var PTS_PER_IN = 72;
-    var DOC_WIDTH = 8.5 * PTS_PER_IN;
-    var DOC_HEIGHT = 11 * PTS_PER_IN;
-
-    var margin = options.margin;
-    var usable_height = DOC_HEIGHT - 2 * margin - options.footer_pt;
-
-    var doc = new jsPDF('portrait','pt','letter');
-
-    function print_headers(doc,headers,pt,margin) {
-        // print headers; return where the next line would be
-        var x0 = margin;
-        var y0 = margin;
-        var header_padding = pt/3;
-        doc.setFontSize(pt);
-        for (var i=0;i<headers.length;i++) {
-            doc.text(x0,y0,headers[i]);
-            y0 += pt + header_padding;
-        }
-        return y0;
-    }
-
-    function print_page_num(doc,pt,margin,doc_height,num) {
-        var x0 = margin;
-        var y0 = doc_height - margin;
-        doc.setFontSize(pt)
-            .text(x0,y0,'Page ' + num.toString());
-    }
-
-    /** First page: filled grid **/
-    // Print the headers
-    var headers = [];
-    // only include the title if it's a Sunday
-    if (xw_width >= 17)
-    {
-        headers.push(xw.metadata.title);
-    }
-    headers.push(xw.metadata.author);
-    var address_arr = options.address.split('\n');
-    headers = headers.concat(address_arr);
-    headers.push(options.email);
-    headers.push('');
-    headers.push('Word count: ' + xw.words.length.toString());
-    var y0 = print_headers(doc,headers,options.header_pt,margin);
-
-    // Print the filled grid
-    var grid_ypos = y0 + options.grid_padding;
-    // adjust the the grid size if we don't have enough space
-    var grid_size = options.grid_size;
-    if (grid_size > DOC_HEIGHT - grid_ypos - margin - options.footer_pt) {
-        grid_size = DOC_HEIGHT - grid_ypos - margin - options.footer_pt;
-    }
-    // position x so that the grid is centered
-    var grid_xpos = (DOC_WIDTH - grid_size)/2;
-    var first_page_options = {
-        grid_letters : true
-    ,   grid_numbers : true
-    ,   x0: grid_xpos
-    ,   y0: grid_ypos
-    //,   grid_size: grid_size
-    ,   cell_size: grid_size / xw_width
-    ,   gray : options['gray']
-    };
-    draw_crossword_grid(doc, xw, first_page_options);
-    print_page_num(doc,options.footer_pt,margin,DOC_HEIGHT,1);
-
-    /** Second page: empty grid **/
-    doc.addPage();
-    print_headers(doc,headers,options.header_pt,margin);
-    var second_page_options = {
+    var grid_options = {
         grid_letters : false
     ,   grid_numbers : true
     ,   x0: grid_xpos
     ,   y0: grid_ypos
-    //,   grid_size: grid_size
-    ,   cell_size: grid_size / xw_width
-    ,   gray : options['gray']
+    ,   cell_size: grid_width / xw_width
+    ,   gray : options.gray
+    ,   image: options.image
     };
-    draw_crossword_grid(doc, xw, second_page_options);
-    print_page_num(doc,options.footer_pt,margin,DOC_HEIGHT,2);
+    draw_crossword_grid(doc, xw, grid_options);
 
-    /** Remaining pages: clues and entries **/
-    // Set up two arrays: one of clues and one of entries
-    var clues = [];
-    var entries = [];
-
-    xw.clues.forEach(function(clue_list) {
-        clues.push(`<b>${clue_list.title}</b>`); entries.push('');
-        clue_list.clue.forEach(function(my_clue) {
-            var num = my_clue['number'];
-            var clue = my_clue['text'];
-            const wordid_to_word = xw.get_entry_mapping();
-            var entry = wordid_to_word[my_clue['word']];
-            clues.push(num + ' ' + clue); entries.push(entry);
-        });
-    });
-
-    var page_num = 3;
-    doc.setFontSize(options.clue_entry_pt);
-    headers = [xw.metadata.author];
-
-    // new page
-    doc.addPage();
-    print_page_num(doc,options.footer_pt,margin,DOC_HEIGHT,page_num);
-    var clue_ypos = print_headers(doc,headers,options.header_pt,margin);
-    clue_ypos += options.clue_entry_pt;
-    var clue_xpos = margin;
-    var entry_xpos = margin + options.clue_width + options.entry_left_padding;
-    var entry_ypos = clue_ypos;
-
-    for (var i=0;i<clues.length;i++) {
-        var clue = clues[i];
-        var entry = entries[i];
-        //var lines = doc.splitTextToSize(clue,options.clue_width);
-        var lines = split_text_to_size_bi(clue, options.clue_width, doc, i==0, font_type=options.font_type);
-        // check that the clue fits; if not, make a new page
-        if (clue_ypos + lines.length * options.clue_entry_pt + options.footer_pt + margin > DOC_HEIGHT) {
-            doc.addPage();
-            page_num += 1;
-            print_page_num(doc,options.footer_pt,margin,DOC_HEIGHT,page_num);
-            clue_ypos = print_headers(doc,headers,options.header_pt,margin);
-            clue_ypos += options.clue_entry_pt;
-            entry_ypos = clue_ypos;
-        }
-        // print the clue
-        for (var j=0; j<lines.length;j++) {
-            doc.setFontSize(options.clue_entry_pt);
-            printCharacters(doc, lines[j], clue_ypos, clue_xpos, options.clue_entry_pt, font_type=options.font_type);
-            clue_ypos += options.clue_entry_pt;
-        }
-        // print the entry
-        doc.setFontSize(options.clue_entry_pt).text(entry_xpos,entry_ypos,entry);
-
-        // adjust the coordinates (double-spacing)
-        clue_ypos += options.clue_entry_pt;
-        entry_ypos = clue_ypos;
+    if (options.num_pages == 2) {
+        doc.movePage(2,1);
     }
-    console.log('done');
 
     doc.save(options.outfile);
 }
