@@ -3,6 +3,9 @@ const { jsPDF } = window.jspdf;
 
 const DEFAULT_FONT_TYPE = 'helvetica';
 
+// default character to print when we don't have a number
+const DEFAULT_NUM = '•'
+
 /** Helper functions for splitting text with tags **/
 // function to traverse DOM tree
 function traverseTree(htmlDoc, agg=[]) {
@@ -740,10 +743,10 @@ function jscrossword_to_pdf2(xw, options={}) {
         for (i=0; i< xw.clues[j]['clue'].length; i++) {
             var e = xw.clues[j]['clue'][i];
             // if no number, default to a bullet
-            var num = e.number || '•';
+            var num = e.number || DEFAULT_NUM;
             var clue = e.text;
             // for acrostics, we don't print a clue without a "number"
-            if (xw.metadata.crossword_type == 'acrostic' && !num) {
+            if (xw.metadata.crossword_type == 'acrostic' && num == DEFAULT_NUM) {
                 continue;
             }
 
