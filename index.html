@@ -71,7 +71,12 @@ function handleFileSelect(evt) {
             options_obj['thorny'] = document.getElementById('thorny_chk').checked;
             options_obj['show_notepad'] = document.getElementById('show_notepad_chk').checked;
             options_obj['num_columns'] = parseInt(document.getElementById('num_cols').value) || null;
-            options_obj['num_full_columns'] = parseInt(document.getElementById('num_full_cols').value) || null;
+            if (document.getElementById('num_full_cols').value == 'AUTO') {
+              options_obj['num_full_columns'] = null;
+            } else {
+              options_obj['num_full_columns'] = parseInt(document.getElementById('num_full_cols').value);
+            }
+            console.log(options_obj);
             // define what happens when the file is loaded
             r.onload = (function (theFile) {
                 return function (e) {
@@ -108,6 +113,7 @@ function handleFileSelect(evt) {
                     const xw = xw_constructor.fromData(contents);
                     console.log(xw);
                     window.jsxw = xw;
+                    console.log(options_obj);
                     jscrossword_to_pdf(xw, options=options_obj);
                 };
             })(f);
@@ -129,10 +135,10 @@ function setNumFullCols() {
   // Clear any existing options
   select.innerHTML = '';
   // Create and append options
-  for (let i = 0; i < val; i++) {
+  for (let i = 0; i <= val; i++) {
       const option = document.createElement("option");
-      option.value = i;
-      option.text = `${i}`;
+      option.value = i-1;
+      option.text = `${i-1}`;
       if (i == 0) {
         option.value = 'null';
         option.text = 'AUTO';
