@@ -810,9 +810,14 @@ function jscrossword_to_pdf2(xw, options={}) {
     var selectedDoc;
     var obj_val = 1000.;
     const ideal_clue_pt = 11.5;
-    //const ideal_cell_size = (options.max_cell_size + options.max_cell_size)/2.;
-    // ideal grid area is about 1/4 the page area
-    const ideal_grid_area = DOC_WIDTH * DOC_HEIGHT * 0.25;
+    const ideal_cell_size = (options.max_cell_size + options.min_cell_size)/2.;
+    let ideal_grid_area = ideal_cell_size * ideal_cell_size * xw_height * xw_width;
+    // this should be between 1/4 and 2/5 of the doc size
+    if (ideal_grid_area < DOC_WIDTH * DOC_HEIGHT * 0.25) {
+      ideal_grid_area = DOC_WIDTH * DOC_HEIGHT * 0.25;
+    } else if (ideal_grid_area > DOC_WIDTH * DOC_HEIGHT * 0.4) {
+      ideal_grid_area = DOC_WIDTH * DOC_HEIGHT * 0.4;
+    }
     possibleDocs.forEach(function (pd) {
       //var thisVal = pd.gridProps.cell_size/options.max_cell_size + pd.docObj.clue_pt/options.max_clue_pt;
       //var thisVal = (pd.gridProps.cell_size - ideal_cell_size)**2 + (pd.docObj.clue_pt - ideal_clue_pt)**2;
@@ -825,7 +830,7 @@ function jscrossword_to_pdf2(xw, options={}) {
       if (pd.columns.num_columns) {
         thisVal += pd.columns.num_columns/500;
       }
-      //console.log(pd); console.log(thisVal);
+      console.log(pd); console.log(thisVal);
       if (thisVal < obj_val) {
         obj_val = thisVal;
         selectedDoc = pd;
