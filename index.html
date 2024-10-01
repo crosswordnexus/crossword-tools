@@ -76,7 +76,7 @@ function handleFileSelect(evt) {
             } else {
               options_obj['num_full_columns'] = parseInt(document.getElementById('num_full_cols').value);
             }
-            console.log(options_obj);
+            //console.log(options_obj);
             // define what happens when the file is loaded
             r.onload = (function (theFile) {
                 return function (e) {
@@ -113,7 +113,6 @@ function handleFileSelect(evt) {
                     const xw = xw_constructor.fromData(contents);
                     console.log(xw);
                     window.jsxw = xw;
-                    console.log(options_obj);
                     jscrossword_to_pdf(xw, options=options_obj);
                 };
             })(f);
