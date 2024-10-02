@@ -809,8 +809,8 @@ function jscrossword_to_pdf2(xw, options={}) {
     // let's say we want things as big as possible?
     var selectedDoc;
     var obj_val = 1000.;
-    const ideal_clue_pt = 11.5;
-    const ideal_cell_size = (options.max_cell_size + options.min_cell_size)/2.;
+    const ideal_clue_pt = 12.5;
+    const ideal_cell_size = (options.max_cell_size + options.min_cell_size)/2.5;
     let ideal_grid_area = ideal_cell_size * ideal_cell_size * xw_height * xw_width;
     // this should be between 1/4 and 2/5 of the doc size
     if (ideal_grid_area < DOC_WIDTH * DOC_HEIGHT * 0.25) {

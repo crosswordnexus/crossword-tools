@@ -103,6 +103,7 @@ function handleFileSelect(evt) {
                       for (var n in unzip.files) {
                           var result2 = unzip.read(n);
                           utf8Str = result2.data;
+                          utf8Str = BinaryStringToUTF8String(utf8Str);
                           break;
                       }
                       contents = rgToIpuz(utf8Str, thorny=options_obj.thorny);
