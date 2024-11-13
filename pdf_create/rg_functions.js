@@ -54,8 +54,8 @@ function entryToTags(entry) {
 
 // helper function to sort an array of clues by clue
 function sortByClue(arr) {
-    // Helper function to remove non-alpha characters and convert to lowercase
-    const cleanString = (str) => str.replace(/[^a-zA-Z]/g, '').toLowerCase();
+    // Helper function to remove non-alphanumeric characters and convert to lowercase
+    const cleanString = (str) => str.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
     // Sorting the array by cleaned "answer" values
     return arr.sort((a, b) => {
