@@ -33,14 +33,14 @@ function pdfSafe(text, font_type = DEFAULT_FONT_TYPE, defaultChar = "*") {
   let arr = [];
   let max_charcode = 8226;
   // global emoji replacements
-  let emojiReplace = {'💯': '100', '®️': '(R)', '🤷': '(shrug)'};
+  let emojiReplace = {'💯': '100', '®️': '(R)', '🤷': '(shrug)', '🫤': ':/'};
 
   // Update settings for DejaVu font
   if (font_type === 'DejaVu') {
     max_charcode = 10175;
     let e2 = {'☀️': '☀', '🌥': '☁', '🌦': '☔', '⛄': '☃', '🌠': '☄',
       '📞': '☎', '🌧': '☔', '🍵': '☕', '💀': '☠', '😊': '☺', '🎶': '♪',
-      '🎵': '♫', '🫤': '☹', '🚫': '⚠', '🏠': '⌂', '🔄': '↺', '😏': '☺',
+      '🎵': '♫', '🚫': '⚠', '🏠': '⌂', '🔄': '↺', '😏': '☺',
       '🙅': '⚠'};
     emojiReplace = {...emojiReplace, ...e2};
   } else {
