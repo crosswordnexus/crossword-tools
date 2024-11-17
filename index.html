@@ -34,7 +34,7 @@
   <p>(Rows Garden only) Alphabetize bloom clues: <input type="checkbox" id="thorny_chk" /></p>
   <p><label for="options_textarea">Advanced options:</label></p>
   <textarea id="options_textarea" name="options_textarea" rows=10 cols=30>
-{}
+{"font_type": "DejaVu"}
 </textarea>
 </div>
 
@@ -148,6 +148,11 @@ function setNumFullCols() {
 }
 document.getElementById('num_cols').addEventListener('change', setNumFullCols, false);
 </script>
+
+<!-- Add DejaVu fonts -->
+<script src="pdf_create/DejaVu-normal.js"></script>
+<script src="pdf_create/DejaVu-bold.js"></script>
+<script src="pdf_create/DejaVu-italic.js"></script>
 
 </body>
 </HTML>
