@@ -5,4 +5,5 @@ Most of this code is released under the MIT License.  In addition, the following
 
 * jsPDF, https://github.com/MrRio/jsPDF, MIT License.
 * JSUnzip, https://github.com/operasoftware/jsunzip/blob/master/source/jsunzip.js, zlib/libpng license
-* fold-to-ascii, https://github.com/mplatt/fold-to-ascii, Apache-2.0 License.
+* twemoji, https://github.com/jdecked/twemoji, MIT License.
+* grapheme-splitter, https://github.com/orling/grapheme-splitter, MIT License.
