@@ -607,7 +607,7 @@ function xw_read_jpz(data1) {
     var metadata = {
       'title': '', 'author': ''
     , 'copyright': '', 'description': ''
-    , 'fakeclues': false
+    , 'fakeclues': false, 'realwords': false
     };
 
     var title = jpz_metadata[0].getElementsByTagName('title');
@@ -615,6 +615,7 @@ function xw_read_jpz(data1) {
     var copyright = jpz_metadata[0].getElementsByTagName('copyright');
     var description = jpz_metadata[0].getElementsByTagName('description');
     var fakeclues = Boolean(jpz_metadata[0].getElementsByTagName('fakeclues').length);
+    var realwords = Boolean(jpz_metadata[0].getElementsByTagName('realwords').length);
     var intro = puzzle[0].getElementsByTagName('instructions');
 
     if (title.length) {
@@ -639,6 +640,7 @@ function xw_read_jpz(data1) {
     }
 
     metadata['fakeclues'] = fakeclues;
+    metadata['realwords'] = realwords;
     metadata['crossword_type'] = crossword_type;
 
     // logic for check/reveal buttons
