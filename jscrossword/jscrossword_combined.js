@@ -130,6 +130,36 @@ function xw_write_cfp(metadata, cells, words, clues) {
 * copyright (c) 2021 Crossword Nexus
 * MIT License https://opensource.org/licenses/MIT
 *******************/
+
+// Decide whether clue cells are 0- or 1-based.
+// Returns offset (0 or 1) to subtract.
+function cellOffset(cluesObj, height, width) {
+  if (!cluesObj) return 0;
+
+  // Collect all coordinates
+  const allCells = [];
+  Object.values(cluesObj).forEach(clueList => {
+    clueList.forEach(clue => {
+      if (clue.cells && clue.cells.length) {
+        allCells.push(...clue.cells);
+      }
+    });
+  });
+
+  if (allCells.length === 0) return 0; // irrelevant
+
+  const inBounds = (r, c) =>
+    r >= 0 && r < height && c >= 0 && c < width;
+
+  const anyInvalid0 = allCells.some(([r, c]) => !inBounds(r, c));
+  const anyInvalid1 = allCells.some(([r, c]) => !inBounds(r - 1, c - 1));
+
+  if (anyInvalid0 && anyInvalid1) return 1;   // invalid puzzle; fallback
+  if (!anyInvalid0 && !anyInvalid1) return 1; // unknown → stick with default
+  return anyInvalid0 ? 1 : 0;
+}
+
+
 function xw_read_ipuz(data) {
     // If `data` is a string, convert to object
     if (typeof(data) === 'string') {
@@ -297,6 +327,11 @@ function xw_read_ipuz(data) {
           titles = [titles[1], titles[0]];
       }
     }
+
+    // Get the offset from the heuristic
+    const offset = cellOffset(data['clues'], height, width);
+    console.log("Detected cell offset: ", offset);
+
     titles.forEach( function(title) {
         var thisClues = [];
         data['clues'][title].forEach( function (clue) {
@@ -321,7 +356,7 @@ function xw_read_ipuz(data) {
             if (clue.cells && clue.cells.length) {
                 var thisCells = [];
                 clue.cells.forEach(function (thisCell) {
-                    thisCells.push([thisCell[0]-1, thisCell[1]-1]);
+                    thisCells.push([thisCell[0] - offset, thisCell[1] - offset]);
                 });
                 words.push({'id': word_id.toString(), 'cells': thisCells});
             }
@@ -369,6 +404,7 @@ function xw_read_ipuz(data) {
 }
 
 function xw_write_ipuz(metadata, cells, words, clues) {
+  // Note: this doesn't really work (yet)
   j = {
     "version": "http://ipuz.org/v1",
     "kind": ["http://ipuz.org/crossword#1"],
@@ -571,7 +607,7 @@ function xw_read_jpz(data1) {
     var metadata = {
       'title': '', 'author': ''
     , 'copyright': '', 'description': ''
-    , 'fakeclues': false
+    , 'fakeclues': false, 'realwords': false
     };
 
     var title = jpz_metadata[0].getElementsByTagName('title');
@@ -579,6 +615,7 @@ function xw_read_jpz(data1) {
     var copyright = jpz_metadata[0].getElementsByTagName('copyright');
     var description = jpz_metadata[0].getElementsByTagName('description');
     var fakeclues = Boolean(jpz_metadata[0].getElementsByTagName('fakeclues').length);
+    var realwords = Boolean(jpz_metadata[0].getElementsByTagName('realwords').length);
     var intro = puzzle[0].getElementsByTagName('instructions');
 
     if (title.length) {
@@ -603,6 +640,7 @@ function xw_read_jpz(data1) {
     }
 
     metadata['fakeclues'] = fakeclues;
+    metadata['realwords'] = realwords;
     metadata['crossword_type'] = crossword_type;
 
     // logic for check/reveal buttons
