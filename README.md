@@ -1,3 +1,5 @@
+## This repo has been deprecated. Please consider using https://github.com/crosswordnexus/jscrossword instead.
+
 # Crossword Tools
 A mishmash of crossword tools available on crosswordnexus.com, added here mostly for version control purposes.
 
